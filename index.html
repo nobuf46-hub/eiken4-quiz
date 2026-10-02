@@ -134,7 +134,7 @@
 
 <header>
   <h1>英検4級 1問1答トレーニング</h1>
-  <p>過去3回分の出題傾向をもとにしたオリジナル対策問題</p>
+  <p>英検4級の出題傾向をもとにしたオリジナル対策問題</p>
 </header>
 
 <div class="wrap">
@@ -154,12 +154,12 @@
     </div>
     <div class="card">
       <h2>出題形式ごとに練習しよう</h2>
-      <p style="font-size:0.85rem;color:var(--muted);margin-top:-4px;">2025年度第2回・第3回、2026年度第1回の過去問を分析して作成した、同レベルのオリジナル問題です。ジャンルを選んで1問ずつ解いていきましょう。</p>
+      <p style="font-size:0.85rem;color:var(--muted);margin-top:-4px;">英検4級の出題傾向をもとに作成した、オリジナル問題です。項目を選ぶと、各項目100問の中から毎回ランダムに10問が出ます。1問ずつ解いていきましょう。</p>
       <div id="cat-list"></div>
     </div>
     <div class="card">
       <h2>全問チャレンジ</h2>
-      <p style="font-size:0.85rem;color:var(--muted);">全カテゴリからランダムに出題します（本番同様、様々な形式が混ざります）。</p>
+      <p style="font-size:0.85rem;color:var(--muted);">各項目から10問ずつ、ランダムに出題します（本番同様、様々な形式が混ざります）。</p>
       <button class="cat-btn" id="btn-all" style="background:var(--main);color:#fff;">
         <span>🎯 ランダム総合問題（<span id="all-count">0</span>問）</span>
         <span class="tag" style="color:#fff;">START ▶</span>
@@ -235,7 +235,7 @@
     </div>
   </div>
 
-  <div class="footer-note">※本アプリの問題はQQキッズ英語ブログの解説記事および2025年度第2回・第3回・2026年度第1回の英検4級過去問の出題傾向を参考に作成したオリジナル問題です。英検®は公益財団法人日本英語検定協会の登録商標です。</div>
+  <div class="footer-note">※本アプリの問題は、英検4級の出題傾向を参考に作成したオリジナル問題です。英検®は公益財団法人日本英語検定協会の登録商標です。</div>
 </div>
 
 <script>
@@ -246,126 +246,731 @@ const TIPS = {
   vocab: "大問1では単語・熟語の知識が問われます。前後の文脈から「どんな意味の単語が入るか」を予測し、単語帳で名詞・動詞・形容詞をバランスよく覚えましょう。",
   dialogue: "大問2は会話の流れを読み取る問題です。定型的な受け答え（あいさつ・許可・依頼・感想など）を覚えておくと、意味の通る選択肢をすぐに選べます。",
   order: "大問3は語句整序です。日本語の意味から英文の骨組み（主語→動詞→目的語）を考え、May I ~? / have to ~ / want to ~ のような基本パターンを体にしみこませましょう。",
-  reading: "大問4は掲示・メール・物語文の読解です。設問を先に読んでから本文中の該当箇所を探すと時間短縮になります。数字・日付・固有名詞に印をつけながら読みましょう。"
+  reading: "大問4は掲示・メール・物語文の読解です。設問を先に読んでから本文中の該当箇所を探すと時間短縮になります。数字・日付・固有名詞に印をつけながら読みましょう。",
+  tango: "単語は「見て読む→クイズで思い出す→間違えた単語だけ復習」のくり返しが効果的です。基本の単語に加えて、went・made など過去形も確実に覚えましょう。"
 };
 
 const CATS = [
-  {id:"vocab", name:"語句補充問題", emoji:"📘", desc:"文脈に合う単語を選ぶ（大問1タイプ）"},
+  {id:"vocab", name:"語句補充問題", emoji:"📘", desc:"文脈に合う単語・語句を選ぶ（大問1タイプ）"},
   {id:"dialogue", name:"会話文完成問題", emoji:"💬", desc:"自然な受け答えを選ぶ（大問2タイプ）"},
   {id:"order", name:"語句整序問題", emoji:"🔀", desc:"日本語に合う語順を作る（大問3タイプ）"},
-  {id:"reading", name:"読解問題", emoji:"📄", desc:"掲示・メール・物語文を読んで答える（大問4タイプ）"}
+  {id:"reading", name:"読解問題", emoji:"📄", desc:"掲示・メール・物語文を読んで答える（大問4タイプ）"},
+  {id:"tango", name:"英単語", emoji:"🔤", desc:"単語の意味を答える（英語⇄日本語）"}
 ];
 
 const Q = [];
 
+/* ---- 問題データ：各項目100問 ----
+   毎回、各項目の問題バンクからランダムに 10 問を出題します。
+   問題の形: [問題文, [選択肢×4], 正解の番号(0〜3), 解説] */
+const QUIZ_SIZE = 10;
+
 /* ---- vocab (語句補充) ---- */
 const vocabData = [
-["Ann didn't have her (   ) for the train, so she went back home to get it.",["seat","bridge","ticket","shirt"],2,"「電車に乗るために必要な物」＝ ticket（切符）。文脈から必要な物を確認しよう。"],
-["Tom wants to (   ) his room before his friends come over.",["clean","cook","drive","swim"],0,"部屋を「きれいにする」＝ clean。友達が来る前の準備の場面。"],
-["A: What time will the movie (   )?  B: At 7:30.",["start","cut","borrow","carry"],0,"映画が「始まる」＝ start。時刻を尋ねる会話でよく使う。"],
-["Mika's brother is a (   ). He studies math at university.",["nurse","college student","farmer","pilot"],1,"大学で勉強している＝ college student（大学生）。"],
-["A: Did you see the (   ) about the earthquake?  B: Yes, it was scary.",["news","hobby","weather","sport"],0,"地震について＝ news（ニュース）。"],
-["The store is open (   ) 10 a.m. to 8 p.m.",["among","from","over","with"],1,"from A to B「AからBまで」。営業時間の表現。"],
-["A: I have (   ) with my science project.  B: Don't worry, I can help.",["trouble","action","world","taste"],0,"have trouble with ~「~で困っている」。"],
-["Emma usually (   ) the dishes after dinner.",["does","washes","holds","gives"],1,"wash the dishes「皿を洗う」。"],
-["A: Bye, I'm going to the library.  B: OK, have a good (   ).",["job","help","time","taste"],2,"have a good time「楽しんできてね」。"],
-["Jack is twelve years (   ). He is in the sixth grade.",["old","light","big","short"],0,"~ years old「~歳」。"],
-["A: What's your favorite (   ) at school?  B: I like art the best.",["subject","kitchen","forest","insect"],0,"「教科」＝ subject。"],
-["My sister (   ) home late yesterday because of the rain.",["came","comes","come","coming"],0,"yesterdayがあるので過去形came。"],
-["A: This bag is heavy.  B: Yes, but that one is the (   ).",["heavy","heaviest","heavier","more heavy"],1,"theの後は最上級 heaviest。"],
-["A: What's the weather like in Okinawa?  B: It's nice. (   ) are many beautiful beaches.",["They","Those","There","Their"],2,"There are ~「~があります」。"],
-["Ken (   ) English every day to prepare for the test.",["studies","study","studying","studied"],0,"主語が三人称単数、現在の習慣→studies。"],
-["A: Is this seat (   )?  B: No, someone is sitting there.",["free","full","short","cheap"],0,"「空いている」＝ free。"],
-["The concert will (   ) at eight o'clock tonight.",["begin","put","take","make"],0,"「始まる」＝ begin。"],
-["A: How was your trip to Kyoto?  B: It was (   )! I want to go again.",["boring","amazing","dangerous","difficult"],1,"良い感想が続くので amazing（すばらしい）。"],
-["Please (   ) the door when you leave the room.",["close","open wide","break","paint"],0,"部屋を出る時は close（閉める）が自然。"],
-["A: What do you want to be in the future?  B: I want to be a (   ) and fly airplanes.",["dentist","pilot","chef","artist"],1,"飛行機を飛ばす＝ pilot。"],
-["My father (   ) to work by train every morning.",["goes","go","going","gone"],0,"主語三人称単数、現在の習慣→goes。"],
-["A: Can you (   ) me with my math homework?  B: Sure, no problem.",["help","hurt","hit","hate"],0,"help someone with ~「~を手伝う」。"],
-["It was very (   ) yesterday, so we stayed home all day.",["sunny","rainy","exciting","cheap"],1,"一日中家にいた理由として rainy（雨）が自然。"],
-["A: Whose umbrella is this?  B: It's (   ). I bought it yesterday.",["I","me","my","mine"],3,"所有代名詞 mine「私のもの」。"]
+["A: What did you do last weekend?  B: I went to the (   ) and swam in the sea.", ["beach", "desk", "kitchen", "station"], 0, "swam in the sea（海で泳いだ）→ 行った場所は beach（ビーチ）。"],
+["My mother cooks dinner in the (   ).", ["library", "classroom", "gym", "kitchen"], 3, "料理をする場所は kitchen（台所）。"],
+["I need a (   ) to write my name on this paper.", ["shoe", "rain", "bus", "pen"], 3, "名前を書く道具は pen（ペン）。"],
+["We saw many (   ) at the zoo, like lions and elephants.", ["stars", "trains", "animals", "flowers"], 2, "lions and elephants は animals（動物）の例。"],
+["A: What's the (   ) today?  B: It's sunny and warm.", ["price", "subject", "color", "weather"], 3, "What's the weather?「天気はどう？」。sunny and warm と答えている。"],
+["I'm going to buy some bread at the (   ) near my house.", ["hospital", "bank", "library", "supermarket"], 3, "パンを買う場所は supermarket（スーパー）。"],
+["It's cold today. Please wear a (   ).", ["tree", "coat", "lesson", "desk"], 1, "寒い日に着るのは coat（コート）。"],
+["We have an English (   ) at ten o'clock.", ["lesson", "mountain", "tooth", "season"], 0, "have a lesson「授業がある」。"],
+["My grandfather lives on a small (   ) in the sea.", ["river", "field", "station", "island"], 3, "海の中の小さな土地＝ island（島）。"],
+["A: What's your favorite (   )?  B: I like math the best.", ["subject", "season", "food", "color"], 0, "math（数学）は学校の教科＝ subject。"],
+["The (   ) is very high. We can see the whole town from the top.", ["beach", "mountain", "river", "pond"], 1, "頂上から町全体が見える高い場所＝ mountain（山）。"],
+["Mr. Brown is a (   ) at our school. He teaches science.", ["teacher", "farmer", "doctor", "driver"], 0, "teaches science（理科を教える）→ teacher（先生）。"],
+["My brother plays (   ) for the school team. He is a good goalkeeper.", ["piano", "tennis", "soccer", "cards"], 2, "goalkeeper（ゴールキーパー）がいるスポーツ＝ soccer。"],
+["There are twelve (   ) in a year.", ["hours", "days", "months", "weeks"], 2, "1年は12か月＝ twelve months。"],
+["A: How much is this T-shirt?  B: It's 2,000 yen. It's a little (   ).", ["round", "busy", "young", "expensive"], 3, "値段の話なので expensive（高い）。"],
+["Don't forget your (   ) when you go out in the rain.", ["dictionary", "umbrella", "notebook", "calendar"], 1, "雨の日の持ち物＝ umbrella（かさ）。"],
+["I put some (   ) in my coffee because I like sweet drinks.", ["meat", "sugar", "salt", "rice"], 1, "sweet（甘い）が好き→ sugar（砂糖）。"],
+["We watched a baseball (   ) on TV last night.", ["game", "leaf", "tooth", "island"], 0, "baseball game「野球の試合」。"],
+["My (   ) is in my bag. I use it to call my friends.", ["towel", "phone", "pencil", "ruler"], 1, "友だちに電話をする道具＝ phone。"],
+["I'm going to (   ) a letter to my grandmother.", ["write", "drive", "sing", "swim"], 0, "write a letter「手紙を書く」。"],
+["A: Can you (   ) me the salt?  B: Sure. Here you are.", ["cut", "wash", "climb", "pass"], 3, "pass 人 物「人に物を渡す」。"],
+["Please (   ) to the teacher carefully.", ["listen", "look", "watch", "hear"], 0, "listen to ~「~を聞く」。to が続くのは listen。"],
+["We (   ) a new house last year. It's near the station.", ["build", "built", "building", "builds"], 1, "last year（去年）があるので過去形 built（build の過去形）。"],
+["I (   ) my key at home, so I can't open the door.", ["leaving", "leaves", "left", "leave"], 2, "「家に置いてきた」と過去の話なので left（leave の過去形）。"],
+["Please (   ) the window. It's very hot in this room.", ["open", "paint", "sell", "carry"], 0, "暑い部屋なので open the window「窓を開ける」。"],
+["Tom (   ) his dog in the park every morning.", ["to walk", "walks", "walk", "walking"], 1, "主語が3人称単数（Tom）で、毎朝の習慣→ walks。"],
+["She (   ) a beautiful picture of the mountain yesterday.", ["drew", "draw", "drawing", "draws"], 0, "yesterday（昨日）→ 過去形 drew（draw の過去形）。"],
+["I (   ) a new bike for my birthday.", ["getting", "gets", "got", "get"], 2, "「誕生日にもらった」と過去の話→ got（get の過去形）。"],
+["Please (   ) quietly in the library.", ["shout", "jump", "walk", "throw"], 2, "図書館では静かに歩く＝ walk quietly。"],
+["I (   ) to music while I do my homework.", ["listen", "look", "watch", "see"], 0, "listen to music「音楽を聞く」。"],
+["Can you (   ) me how to get to the station?", ["tell", "say", "talk", "speak"], 0, "tell 人 how to ~「人に~の仕方を教える」。"],
+["A: What time did you (   ) up this morning?  B: At six.", ["take", "get", "put", "make"], 1, "get up「起きる」。"],
+["My father always (   ) the newspaper after breakfast.", ["plays", "reads", "cooks", "eats"], 1, "新聞は read（読む）。主語が3人称単数なので reads。"],
+["We must (   ) these library books by Friday.", ["wear", "grow", "return", "paint"], 2, "return「返す」。図書館の本は期限までに返す。"],
+["A: Do you (   ) soccer well?  B: Yes, I'm on the school team.", ["play", "take", "make", "wash"], 0, "play soccer「サッカーをする」。"],
+["Please (   ) the door when you leave the room.", ["drink", "sing", "close", "cook"], 2, "close the door「ドアを閉める」。"],
+["I'm (   ) for my friend at the station. She'll arrive soon.", ["talking", "helping", "hearing", "waiting"], 3, "wait for ~「~を待つ」。「もうすぐ着く」とある。"],
+["The baby (   ) all night because she was sick.", ["cry", "crying", "cries", "cried"], 3, "was sick（過去）の話なので過去形 cried。"],
+["I will (   ) you at the station at three.", ["wear", "meet", "read", "eat"], 1, "meet「会う」。"],
+["This soup is too (   ). Please add some water.", ["busy", "sleepy", "lucky", "salty"], 3, "水を足したいほど味が濃い→ salty（しょっぱい）。"],
+["The movie was so (   ) that I laughed a lot.", ["funny", "scary", "sad", "angry"], 0, "laughed a lot（たくさん笑った）→ funny（おもしろい）。"],
+["A: How was the test?  B: It was very (   ). I got 100 points.", ["heavy", "angry", "easy", "empty"], 2, "100点だったので easy（かんたん）。"],
+["The river is (   ) here, so you can't swim.", ["deep", "light", "kind", "sweet"], 0, "deep（深い）ので泳げない。"],
+["My sister runs very (   ). She is the fastest in her class.", ["high", "late", "fast", "long"], 2, "run fast「速く走る」。"],
+["A: Is it far from here?  B: No, it's (   ). You can walk there.", ["near", "heavy", "sick", "cheap"], 0, "far（遠い）の反対＝ near（近い）。"],
+["Please speak (   ). I can't hear you.", ["more loud", "loudest", "most loud", "louder"], 3, "「聞こえない」→ 比較級 louder（もっと大きく）。"],
+["This bag is (   ) than that one.", ["more cheap", "cheap", "cheapest", "cheaper"], 3, "than があるので比較級 cheaper。"],
+["Ken is the (   ) boy in our class.", ["tall", "more tall", "taller", "tallest"], 3, "in our class（クラスの中で）→ 最上級 tallest。"],
+["I get up (   ) than my brother.", ["earlier", "more early", "early", "earliest"], 0, "than があるので比較級 earlier。"],
+["A: Are you (   )?  B: Yes, I haven't eaten since morning.", ["hungry", "busy", "sleepy", "angry"], 0, "朝から食べていない→ hungry（おなかがすいた）。"],
+["We had a lot of fun. It was a (   ) day.", ["wonderful", "terrible", "sick", "heavy"], 0, "たくさん楽しんだ→ wonderful（すばらしい）。"],
+["Mike is (   ) at math. He always gets good scores.", ["nice", "well", "happy", "good"], 3, "be good at ~「~が得意」。"],
+["It's (   ) outside, so take your umbrella.", ["rain", "raining", "rains", "rained"], 1, "It's + ~ing の形＝ raining（雨が降っている）。"],
+["Our school is (   ) to the park. It takes only two minutes.", ["long", "close", "early", "large"], 1, "close to ~「~に近い」。"],
+["My birthday is (   ) May 5.", ["on", "in", "by", "at"], 0, "日付の前は on を使う。"],
+["I usually have breakfast (   ) seven o'clock.", ["at", "on", "to", "in"], 0, "時刻の前は at を使う。"],
+["We go to the beach (   ) summer.", ["at", "on", "of", "in"], 3, "季節の前は in を使う。"],
+["I'm interested (   ) science.", ["at", "of", "on", "in"], 3, "be interested in ~「~に興味がある」。"],
+["Thank you (   ) your help.", ["at", "for", "with", "to"], 1, "Thank you for ~「~をありがとう」。"],
+["A: Who is that boy (   ) the red cap?  B: He's my cousin.", ["by", "with", "at", "for"], 1, "with ~「~をかぶった、~を持った」。"],
+["I'll wait here (   ) you come back.", ["so", "but", "until", "or"], 2, "until「~まで」。"],
+["I was late (   ) the bus was late.", ["if", "but", "so", "because"], 3, "because「~なので」（理由）。"],
+["(   ) you need help, please ask me.", ["But", "Or", "If", "Than"], 2, "If ~「もし~なら」。"],
+["I wanted to go out, (   ) it was raining.", ["so", "but", "if", "or"], 1, "「出かけたかったが、雨だった」→ but（しかし）。"],
+["My sister (   ) a student.", ["am", "are", "is", "be"], 2, "My sister は3人称単数なので is。"],
+["They (   ) playing tennis now.", ["is", "be", "are", "am"], 2, "They には are。now があり進行形（are playing）。"],
+["(   ) you like pizza?", ["Is", "Do", "Does", "Are"], 1, "you の一般動詞の疑問文は Do で始める。"],
+["She (   ) not like carrots.", ["is", "do", "does", "are"], 2, "3人称単数の否定文は does not ~。"],
+["Tom and I (   ) in the same class.", ["am", "are", "is", "be"], 1, "Tom and I は複数なので are。"],
+["I (   ) to the library yesterday.", ["go", "going", "goes", "went"], 3, "yesterday（昨日）→ 過去形 went（go の過去形）。"],
+["Yesterday, Ann (   ) soccer with her friends.", ["played", "playing", "plays", "play"], 0, "Yesterday（昨日）→ 過去形 played。"],
+["I'm going to (   ) my grandmother tomorrow.", ["visiting", "visits", "visit", "visited"], 2, "be going to のあとは動詞の原形 visit。"],
+["We (   ) go to the zoo next Sunday.", ["were", "did", "are", "will"], 3, "next Sunday（今度の日曜日）は未来→ will go。"],
+["A: (   ) did you buy that bag?  B: At the department store.", ["Who", "Why", "Where", "What"], 2, "「デパートで」と場所を答えている→ Where（どこで）。"],
+["A: (   ) is your birthday?  B: It's October 3.", ["Why", "Who", "When", "Which"], 2, "日付を答えている→ When（いつ）。"],
+["A: (   ) is that tall man?  B: He's my uncle.", ["Where", "Who", "How", "What"], 1, "「私のおじ」と人を答えている→ Who（だれ）。"],
+["A: (   ) many books do you have?  B: About fifty.", ["What", "Which", "How", "Where"], 2, "How many ~?「いくつ~？」。"],
+["A: (   ) do you go to school?  B: By bike.", ["Where", "Who", "How", "When"], 2, "By bike（自転車で）は手段→ How（どうやって）。"],
+["Can you (   ) the piano?", ["play", "plays", "playing", "played"], 0, "can のあとは動詞の原形 play。"],
+["My mother (   ) up at six every morning.", ["gets", "get", "getting", "got"], 0, "主語が3人称単数で、毎朝の習慣→ gets。"],
+["I like (   ) books.", ["has read", "reads", "reading", "read"], 2, "like ~ing「~するのが好き」。"],
+["He is (   ) to music now.", ["listened", "listening", "listens", "listen"], 1, "now があり進行形 is ~ing の形。"],
+["A: Is this (   ) bag?  B: No, it's hers.", ["yourself", "your", "you", "yours"], 1, "名詞 bag の前には your（あなたの）。"],
+["A: Whose pen is this?  B: It's (   ).", ["me", "I", "my", "mine"], 3, "「私のもの」＝ mine。"],
+["Mr. Smith is (   ) new English teacher.", ["ours", "we", "our", "us"], 2, "名詞の前は our（私たちの）。"],
+["Please give (   ) some water.", ["my", "me", "mine", "I"], 1, "give の後ろの「私に」は me。"],
+["There (   ) two cats under the tree.", ["be", "are", "is", "am"], 1, "two cats は複数なので There are ~。"],
+["There (   ) a big park near my house.", ["are", "am", "is", "were"], 2, "a big park は単数なので There is ~。"],
+["I have two (   ) and one sister.", ["brothers", "brother's", "a brother", "brother"], 0, "two のあとの名詞は複数形 brothers。"],
+["Please give me a (   ) of water.", ["box", "plate", "spoon", "glass"], 3, "a glass of water「コップ1杯の水」。"],
+["Let's (   ) a break. We've studied for two hours.", ["put", "do", "make", "take"], 3, "take a break「休憩する」。"],
+["I'm sorry I'm late. I (   ) the bus.", ["passed", "left", "lost", "missed"], 3, "miss the bus「バスに乗り遅れる」。"],
+["She (   ) a lot of money on books.", ["paid", "spent", "took", "cost"], 1, "spend money on ~「~にお金を使う」。"],
+["A: Hello. May I speak to Ken?  B: Sorry, he's not (   ). Can I take a message?", ["on", "in", "by", "at"], 1, "he's not in「（いま）不在です」。"],
+["I'm looking forward (   ) the summer vacation.", ["for", "at", "of", "to"], 3, "look forward to ~「~を楽しみにする」。"],
+["It's hot in here. Please (   ) your coat.", ["look for", "turn on", "put on", "take off"], 3, "take off「脱ぐ」。暑いので上着を脱ぐ。"],
+["A: What's (   )? You look sad.  B: I lost my watch.", ["right", "wrong", "well", "new"], 1, "What's wrong?「どうしたの？」。"],
+["A: Can I (   ) your pen?  B: Sure.", ["show", "lend", "borrow", "give"], 2, "borrow「借りる」。lend は「貸す」。"],
+["You look (   ) today. Are you all right?", ["tiring", "tire", "tired", "tires"], 2, "look + 形容詞。tired「疲れた」。"],
+["A: I'm (   ) for a hat.  B: How about this red one?", ["looking", "getting", "going", "coming"], 0, "look for ~「~を探す」。"]
 ];
 vocabData.forEach((d,i)=>{
-  Q.push({cat:"vocab", id:"v"+i, text:d[0], choices:d[1], answer:d[2], explain:d[3]});
+  Q.push({cat:"vocab", id:"n"+String(i+1).padStart(3,"0"), text:d[0], choices:d[1], answer:d[2], explain:d[3]});
 });
 
 /* ---- dialogue (会話文完成) ---- */
 const dialogueData = [
-["Son: Can I have a snack before dinner?\nMother: No, ( ? )",["wash the dishes first.","dinner is almost ready.","have fun at school.","it's not yours."],1,"「もうすぐ夕食だから」がNoの理由として自然。"],
-["Boy: I'm going to make a birthday cake for my mom. ( )\nGirl: About two hours, I think.",["How long does it take?","What did you make?","Do you like it?","Are you good at cooking?"],0,"Girlが時間で答えているので How long ~? が正解。"],
-["Teacher: Do you want to join the art club, Yuki?\nYuki: Yes, ( )",["I don't like drawing.","I really enjoy painting.","I can't go there.","I'm not good at sports."],1,"Yesの後は前向きな理由が続くのが自然。"],
-["Woman: Excuse me. Welcome back from your trip! How was Hawaii?\nMan: It was wonderful.",["Good luck,","Welcome back,","Have a good day,","Not at all,"],1,"帰ってきた人への挨拶＝Welcome back。"],
-["Girl: I always get good scores in English. ( )\nBoy: Oh, can you help me study for the test?",["I like math.","It's easy for me.","It's really short.","She's my teacher."],1,"「私にとって簡単」→相手が助けを求める流れに合う。"],
-["A: Do you want some more juice?\nB: Yes, ( )",["I want to cook dinner.","I can't drink it.","I don't think so.","I'm really thirsty."],3,"Yesに続く理由として「のどが渇いている」が自然。"],
-["A: What time should we meet tomorrow?\nB: ( )\nA: OK, see you then.",["Let's meet at nine.","I went there yesterday.","It's very far.","She likes tea."],0,"時間を尋ねる質問への答えとして自然。"],
-["A: I heard you're moving to a new house.\nB: ( )\nA: That's exciting!",["Yes, next month.","No, I don't have one.","I saw it on TV.","She's my sister."],0,"引っ越しの話題に合う自然な返答。"],
-["A: Can you close the window? It's cold in here.\nB: ( )",["Sure, no problem.","I like it a lot.","She's very kind.","It's five dollars."],0,"依頼に対する快い返答。"],
-["A: Have you finished your homework yet?\nB: ( ) I still have two pages to go.",["Not yet.","Yes, a long time ago.","I'm from Japan.","It's over there."],0,"「まだ2ページ残っている」なので Not yet. が自然。"],
-["A: Why were you late for school today?\nB: ( )",["I missed the bus.","I like the weather.","It's my favorite color.","She's a good singer."],0,"遅刻の理由を答える返答。"],
-["A: What do you think of this restaurant?\nB: ( ) The food is delicious.",["I love it!","I've never been there.","It's too far away.","I don't know her."],0,"感想を尋ねられ、好意的な返答＋理由が続く。"],
-["A: Are you free this Saturday?\nB: ( ) Why do you ask?",["Yes, I am.","It's raining.","I bought it.","He's my cousin."],0,"予定を尋ねられ、素直に答える。"],
-["A: How do you go to school every day?\nB: ( )",["I walk with my friends.","I like science class.","It's a nice day.","She's tall."],0,"通学手段を尋ねる質問への自然な答え。"],
-["A: Whose bike is this in front of the house?\nB: ( )",["It's mine.","I ride it every day.","It's blue.","He's happy."],0,"所有者を尋ねる質問に直接答える。"]
+["Clerk: May I help you?\nCustomer: (   )", ["Yes, I'm looking for a blue shirt.", "Yes, I'm a student at this school.", "I'm fine, thank you. How are you?", "It was delicious. I'd like some more."], 0, "店員の「いらっしゃいませ」に、探している物を伝える返事が自然。"],
+["Customer: How much is this bag?\nClerk: (   )", ["I like it very much.", "It's 3,000 yen.", "Yes, it is.", "It's Tuesday."], 1, "How much ~?（いくら？）には値段で答える。"],
+["Waiter: Are you ready to order?\nCustomer: (   )", ["Yes. I like to read comic books.", "Yes. I'll have a hamburger, please.", "Yes. Thank you for coming to my house.", "No. It's my birthday, and I'm ten."], 1, "注文できるか聞かれたので、注文する返事が自然。"],
+["Mother: What would you like to drink?\nSon: (   )", ["Orange juice, please.", "It's on the table.", "Yes, I do.", "I drank it."], 0, "What ~ drink?（何を飲む？）には飲み物で答える。"],
+["Customer: Excuse me. Do you have this in a smaller size?\nClerk: (   )", ["Yes. I'm happy to see you again.", "No. I'm not a student at this school.", "It's Sunday today, so we're closed.", "Yes. I'll bring one for you."], 3, "「小さいサイズはありますか」への店員の返事。持ってくると答えるのが自然。"],
+["A: Would you like some more cake?\nB: (   )", ["It's under the table.", "No, thank you. I'm full.", "Yes, I did.", "I'm sorry I'm late."], 1, "もっといかがと聞かれ、断るときは No, thank you. I'm full.（おなかいっぱい）。"],
+["Waiter: Would you like a dessert?\nCustomer: (   )", ["Yes. I'll have ice cream.", "Yes. I'm a student at this school.", "It's two o'clock in the afternoon.", "No, I wasn't. It was too late."], 0, "デザートをすすめられたので、選んで答える。"],
+["A: Is this seat taken?\nB: (   )", ["Yes, I'm good at it.", "I eat lunch at noon.", "It's very cheap.", "No. Please sit down."], 3, "「この席は空いていますか」に No（空いている）と答える。"],
+["A: Can I have a glass of water?\nB: (   )", ["That's too bad.", "I'm from Japan.", "Sure. Here you are.", "See you later."], 2, "お願いされたら Sure.（いいですよ）と言って渡す。"],
+["A: How was the pizza?\nB: (   )", ["I'm in the kitchen.", "It was delicious.", "At seven o'clock.", "Yes, it's mine."], 1, "How was ~?（どうだった？）には感想で答える。"],
+["A: Let's play tennis after school.\nB: (   )", ["You're welcome.", "I'm sorry to hear that.", "Nice to meet you.", "Sounds good!"], 3, "さそわれたとき、Sounds good!（いいね）は賛成の返事。"],
+["A: Can you come to my birthday party on Saturday?\nB: (   )", ["Yes, I went to your party last Saturday.", "I'd love to, but I have a piano lesson.", "Happy birthday! I'm twelve years old, too.", "I'm sorry I'm late for the party."], 1, "さそいを断るときは「行きたいけれど…」と理由を言う。"],
+["A: What are you going to do this weekend?\nB: (   )", ["I'm going to visit my grandmother.", "I have a pen and two notebooks.", "He is my uncle, and he lives in Kobe.", "I was at the library with my friend."], 0, "「今週末何をする？」には未来の予定で答える。"],
+["A: Do you want to go shopping with me?\nB: (   )", ["You're welcome. I'm happy to help.", "Sure. What time shall we meet?", "I'm fine, thank you. How about you?", "It's under the bed in my room."], 1, "さそいを受けて、待ち合わせ時刻をたずねる返事が自然。"],
+["A: How about going to the movies tomorrow?\nB: (   )", ["That's a good idea.", "That's too bad.", "I'm sorry I'm late.", "Here you are."], 0, "How about ~ing?（~しない？）への賛成は That's a good idea."],
+["A: Shall we have lunch together?\nB: (   )", ["No, it's a lunch.", "Yes, let's.", "Yes, I have.", "Yes, you shall."], 1, "Shall we ~?（~しましょうか）には Yes, let's. と答える。"],
+["A: Would you like to join our soccer team?\nB: (   )", ["Yes, I'd like to.", "Yes, I'm welcome.", "Yes, I do like.", "No, it's not mine."], 0, "Would you like to ~?（~しませんか）に Yes, I'd like to. と答える。"],
+["A: I'm going to visit Kyoto next week.\nB: (   )", ["I'm sorry to hear that. Are you OK?", "That sounds nice. Have a good trip!", "Thank you for coming to my party.", "You're late again. Please be on time."], 1, "旅行の予定を聞いたら、楽しい旅を願う言葉が自然。"],
+["A: What time shall we meet tomorrow?\nB: (   )", ["I'm eight years old.", "How about eight o'clock?", "I met him yesterday.", "It's Monday."], 1, "待ち合わせ時刻をたずねられたので、時刻を提案する。"],
+["A: Where shall we meet?\nB: (   )", ["It was fun, and I'd like to go again.", "Let's meet in front of the station.", "He's my friend from junior high school.", "At ten o'clock yesterday morning."], 1, "Where（どこで）には場所で答える。"],
+["Student: May I go to the restroom?\nTeacher: (   )", ["Yes, I'm sorry.", "It's nice to meet you.", "Yes, of course.", "No, thank you."], 2, "May I ~?（~してもいいですか）に許可するときは Yes, of course."],
+["A: Could you open the window, please?\nB: (   )", ["Sure. It's hot in here.", "Yes, I am.", "I'm glad to see you.", "It's mine."], 0, "お願いを引き受けるときは Sure.（いいですよ）。"],
+["A: Can I use your pencil?\nB: (   )", ["I'm fine, thanks.", "Sure. Go ahead.", "Nice to meet you.", "It's a pencil."], 1, "使っていいか聞かれたので、Sure. Go ahead.（どうぞ）。"],
+["A: Excuse me. Could you tell me the way to the station?\nB: (   )", ["It's a very old building with a big clock.", "I went to the station by bike yesterday.", "Yes, I have been to that station twice.", "Go straight and turn left at the second corner."], 3, "道をたずねられたので、道順を教える。"],
+["A: Can you help me with my homework?\nB: (   )", ["It's my math book from school.", "Yes, I'm helping my mother now.", "Sure. What's the problem?", "Thank you very much for your help."], 2, "手伝ってと頼まれて、引き受けるときの返事。"],
+["A: Would you like me to carry your bag?\nB: (   )", ["No, it's a bag. It's very heavy today.", "Yes, I'm sorry. I'll carry it myself.", "Thank you. That's kind of you.", "I carry it yesterday. It was heavy."], 2, "親切な申し出にはお礼を言う。"],
+["A: Can I borrow your eraser?\nB: (   )", ["Sure. Here you are.", "No, I'm not.", "Yes, I'm borrowing.", "I bought it, too."], 0, "貸してと言われて、Sure. Here you are.（はい、どうぞ）。"],
+["A: Please be quiet in the library.\nB: (   )", ["I'm sorry.", "You're welcome.", "Nice to meet you.", "Thank you very much."], 0, "注意されたので、I'm sorry.（ごめんなさい）とあやまる。"],
+["A: Could you speak more slowly, please?\nB: (   )", ["Yes, you're welcome.", "Sure. Is this better?", "It's a slow bus.", "I'm studying English."], 1, "ゆっくり話してという頼みを引き受ける返事。"],
+["A: Can I take a picture here?\nB: (   )", ["Yes, I'm taking.", "It's very old.", "I took it yesterday.", "Sure. Go ahead."], 3, "写真をとってよいか聞かれ、許可している。"],
+["A: Thank you for the nice present.\nB: (   )", ["I'm fine, thank you. How are you today?", "Nice to meet you, too. I'm Ken's friend.", "I'm sorry I'm late. The train was slow.", "You're welcome. I'm glad you like it."], 3, "お礼には You're welcome.（どういたしまして）。"],
+["A: I'm sorry I'm late.\nB: (   )", ["You're welcome.", "Nice to meet you.", "I'm fine, thanks.", "That's all right."], 3, "あやまられたら That's all right.（大丈夫です）と答える。"],
+["A: How are you today?\nB: (   )", ["I'm twelve years old, and I'm in Class 3.", "It's sunny and warm in the afternoon.", "Here you are. Please sit down here.", "I'm fine, thank you. And you?"], 3, "How are you? には I'm fine, thank you. と答える。"],
+["A: Nice to meet you.\nB: (   )", ["Yes, I'm fine. Thank you very much.", "Good night. See you tomorrow, Ken.", "Nice to meet you, too.", "You're welcome. It's my pleasure."], 2, "初対面のあいさつには Nice to meet you, too.（こちらこそ）。"],
+["A: Happy birthday!\nB: (   )", ["I'm sorry.", "Nice to meet you.", "Thank you!", "Please sit down."], 2, "お祝いを言われたら Thank you!（ありがとう）。"],
+["A: Good luck on your test tomorrow.\nB: (   )", ["You're welcome. I'm happy to help you.", "Thanks. I'll do my best.", "Here you are. Please take a seat.", "That's too bad. I hope you feel better."], 1, "はげましには Thanks.（ありがとう）と答える。"],
+["A: I lost my wallet.\nB: (   )", ["Oh, that's too bad.", "Congratulations!", "That sounds fun.", "Nice to meet you."], 0, "残念な話には That's too bad.（それは残念）。"],
+["A: I won the speech contest!\nB: (   )", ["That's too bad.", "Please be careful.", "Congratulations!", "I'm sorry."], 2, "うれしい知らせには Congratulations!（おめでとう）。"],
+["A: I have a headache.\nB: (   )", ["That's great. Let's play outside together.", "Happy birthday! I hope you have a nice day.", "That's too bad. Please take a rest.", "Have a good time at the party tonight."], 2, "頭がいたいと聞いたので、気づかう返事が自然。"],
+["A: See you next week.\nB: (   )", ["Nice to meet you.", "You're welcome.", "I'm fine.", "Have a nice weekend!"], 3, "別れのあいさつには、よい週末を願う言葉が自然。"],
+["A: Hello. This is Ken. Can I speak to Mary?\nB: (   )", ["It's very cold in the morning.", "Yes, I'm Ken. Nice to meet you.", "Just a moment, please.", "I don't speak English very well."], 2, "電話で取りつぐときは Just a moment, please.（少々お待ちください）。"],
+["A: What time is it now?\nB: (   )", ["It's two hundred yen.", "It's Wednesday.", "It's my watch.", "It's a quarter to three."], 3, "時刻をたずねられたので時刻で答える。a quarter to three＝2時45分。"],
+["A: What day is it today?\nB: (   )", ["It's Friday.", "It's four o'clock.", "It's October.", "It's sunny."], 0, "What day ~?（何曜日？）には曜日で答える。"],
+["A: How's the weather today?\nB: (   )", ["I'm fine, thank you. How about you?", "It's my umbrella, and it's very old.", "It's cloudy, but it won't rain.", "It's nine o'clock in the morning now."], 2, "天気をたずねられたので、天気で答える。"],
+["A: Did you do your homework?\nB: (   )", ["Yes. I finished it last night.", "I'm going home with my friends.", "Yes, you are. It was very hard.", "No, it's not at home today."], 0, "Did you ~?（~しましたか）には Yes, I did. 型で答える。"],
+["A: Which subject do you like the best?\nB: (   )", ["I went to school by bus today.", "At nine o'clock in the morning.", "I like science the best.", "It's on the desk by the window."], 2, "Which subject（どの教科）には教科名で答える。"],
+["A: How long does it take to get to school?\nB: (   )", ["Yes, it takes a long time.", "It's about five hundred yen for a ticket.", "About twenty minutes by bike.", "It starts at eight thirty every day."], 2, "How long ~?（どのくらい）には時間で答える。"],
+["A: How many people are in your family?\nB: (   )", ["I'm twelve.", "There are five.", "It's a big house.", "Yes, there are."], 1, "How many ~?（何人）には数で答える。"],
+["A: What's your favorite sport?\nB: (   )", ["At the park.", "Yes, I'm a sport.", "I played it yesterday.", "I like baseball."], 3, "好きなスポーツをたずねられたので、スポーツ名で答える。"],
+["A: Who is your homeroom teacher?\nB: (   )", ["Yes, I do.", "At school.", "It's in room three.", "Ms. Sato is."], 3, "Who（だれ）には人で答える。"],
+["Mother: Dinner is ready.\nSon: (   )", ["You're welcome.", "I'm sorry to hear that.", "Yes, it was.", "OK. I'm coming."], 3, "「夕食ができたよ」への返事。"],
+["Father: It's time to go to bed.\nDaughter: (   )", ["Nice to meet you.", "Good morning, Dad.", "OK. Good night, Dad.", "Here you are."], 2, "寝る時間なので Good night.（おやすみ）。"],
+["Mother: Did you brush your teeth?\nSon: (   )", ["Yes, I do.", "Yes, it is.", "Yes, I did.", "No, I'm not."], 2, "Did you ~? には Yes, I did. / No, I didn't. で答える。"],
+["Girl: Mom, can I watch TV?\nMother: (   )", ["It's on the table next to the sofa.", "Yes, you're welcome. Here is the remote.", "I'm sorry I'm late. The bus was slow.", "Not yet. Finish your homework first."], 3, "許可を求められて、まだだめだと理由とともに答えている。"],
+["Boy: Dad, where's my baseball glove?\nFather: (   )", ["I'm fine, thank you. How are you?", "Yes, I do. I put it there.", "It's in the garage.", "It was fun, and I'd like to go again."], 2, "Where（どこ）には場所で答える。"],
+["Mother: What did you do at school today?\nSon: (   )", ["He plays soccer after school.", "We played soccer in P.E. class.", "I'm going to play soccer tomorrow.", "I don't like soccer very much."], 1, "What did you do ~?（何をしたの？）には過去形で答える。"],
+["Sister: Can I use your computer?\nBrother: (   )", ["Don't mention it.", "I'm a student.", "Yes, it's my sister.", "Sorry, I'm using it now."], 3, "使ってもよいか聞かれ、いま使っているので断っている。"],
+["Mother: You look happy today.\nDaughter: (   )", ["Yes. I have a headache and a bad cold.", "Yes. I got a good score on my test.", "Yes. I'm sorry that I broke the window.", "No, I'm not. I got a good score on my test."], 1, "うれしそうな理由を答えている。"],
+["Boy: I'm hungry, Mom.\nMother: (   )", ["You're welcome.", "I'm glad to hear that.", "Have some bread.", "Nice to meet you."], 2, "おなかがすいたと言われ、食べ物をすすめるのが自然。"],
+["Father: Can you help me wash the car?\nSon: (   )", ["You're wrong.", "OK. I'll get the bucket.", "Yes, it's mine.", "I washed it yesterday."], 1, "手伝いの頼みを引き受ける返事。"],
+["A: Where is the library?\nB: (   )", ["It's next to the gym.", "At seven o'clock.", "Yes, I read books.", "It's very old."], 0, "Where（どこ）には場所で答える。next to ~は「~のとなり」。"],
+["A: Do you have a pen?\nB: (   )", ["I'm sorry to hear that.", "Yes. Here you are.", "No, I'm not.", "Yes, it's a pen."], 1, "持っているか聞かれて、貸すときは Here you are.（どうぞ）。"],
+["A: I don't understand this word.\nB: (   )", ["I'll buy a dictionary yesterday.", "It's a nice day.", "Let's look it up in the dictionary.", "Yes, I'm understanding."], 2, "分からない単語は辞書で調べよう、と提案するのが自然。"],
+["A: Let's study for the English test together.\nB: (   )", ["I'm glad to meet you, too, Ken.", "Good idea. Let's start now.", "You're welcome. I'm glad to help.", "It's an English test about verbs."], 1, "さそいに賛成する返事。"],
+["A: Which club are you in?\nB: (   )", ["Yes, I am a club.", "I'm twelve years old.", "I'm in the art club.", "I'm in the morning."], 2, "Which club（どの部活）には部の名前で答える。"],
+["A: Is your sister a junior high school student?\nB: (   )", ["No, I don't. I'm an elementary student.", "It's very near my house, so she walks.", "Yes, she does. She likes her school.", "No, she's still in elementary school."], 3, "Is ~? には Yes, she is. / No, she isn't. 型で答える。"],
+["A: Can you play the guitar?\nB: (   )", ["I'm the guitar.", "No, it isn't.", "Yes, you can.", "Yes, a little."], 3, "Can you ~?（できますか）には Yes, I can. 型で答える。"],
+["A: Whose notebook is this?\nB: (   )", ["Yes, it is.", "I'm Emi.", "It's Emi's.", "It's two o'clock."], 2, "Whose（だれの）には「~のです」で答える。"],
+["A: Why were you late for school?\nB: (   )", ["Because I missed the bus.", "By bus. It takes about thirty minutes.", "With my friend from the same class.", "I'm not late. I came at eight."], 0, "Why（なぜ）には Because ~（~だから）で答える。"],
+["A: Who is that girl?\nB: (   )", ["At the classroom.", "Yes, she is.", "I'm a new classmate.", "She's our new classmate."], 3, "Who（だれ）には人を紹介して答える。"],
+["A: How can I get to the museum?\nB: (   )", ["I went there yesterday.", "It was very interesting.", "It's open on Sundays.", "Take the Number 5 bus."], 3, "How can I get to ~?（どうやって行くの？）には行き方で答える。"],
+["A: Does this bus go to the airport?\nB: (   )", ["Yes, I flew to Okinawa yesterday.", "No, I went there by taxi yesterday.", "Yes. It leaves in five minutes.", "I like the airport. It's very big."], 2, "バスの行き先の質問に、Yes と出発時刻で答えるのが自然。"],
+["A: How far is it from here to the station?\nB: (   )", ["I go there by bike every day.", "It's about ten minutes on foot.", "Yes, it is far from my house.", "It's a very big station with many shops."], 1, "How far（どのくらい遠い）には距離や所要時間で答える。on foot＝歩いて。"],
+["A: Excuse me. Where can I buy a ticket?\nB: (   )", ["It's about five hundred yen each.", "It was cheap, so I bought two.", "At the window over there.", "Yes, I bought one yesterday."], 2, "Where（どこで）には場所で答える。"],
+["A: Is there a post office near here?\nB: (   )", ["Yes. It's across from the bank.", "Yes, I'm a post office worker here.", "I sent a letter to my aunt yesterday.", "It's very expensive to send a letter."], 0, "「近くに郵便局はありますか」に、場所を教える返事。"],
+["A: Is this the train to Osaka?\nB: (   )", ["You're welcome. I'm glad I could help you.", "Yes, I like trains. They are very fast.", "I'm from Osaka, and I live near the station.", "No. You need to take the next one."], 3, "Is this ~?（これは~ですか）に No と正しい電車を教える返事。"],
+["A: Can I park my car here?\nB: (   )", ["No, you can't. It's not allowed.", "I park there every day after work.", "It's a nice car, and it's very fast.", "Yes, I'm a driver, and I drive every day."], 0, "駐車してよいか聞かれ、だめだと答える。"],
+["A: When does the next train leave?\nB: (   )", ["At 4:15.", "For two hours.", "By train.", "At the park."], 0, "When（いつ）には時刻で答える。"],
+["A: How often do you go to the library?\nB: (   )", ["Yes, I often do.", "About twice a week.", "By bike.", "For two hours."], 1, "How often（どのくらいの頻度）には回数で答える。"],
+["A: How long did you stay in Hokkaido?\nB: (   )", ["By plane.", "Yes, I did.", "For three days.", "At a hotel."], 2, "How long（どのくらい）には期間で答える。"],
+["A: You don't look well. What's the matter?\nB: (   )", ["I have a cold.", "Nice to meet you.", "It's Monday.", "Yes, I am."], 0, "What's the matter?（どうしたの？）には具合や理由を答える。"],
+["A: Would you like some tea?\nB: (   )", ["Yes, please.", "It's very hot.", "I'm sorry to hear that.", "Yes, I'm tea."], 0, "すすめられて受けるときは Yes, please.。"],
+["A: Shall I open the window?\nB: (   )", ["No, I'm not. I'm a student here.", "Yes, you're open. Thank you very much.", "I'm glad to see you again today.", "Yes, please. It's hot in here."], 3, "Shall I ~?（~しましょうか）に Yes, please. と受ける。"],
+["A: Do you need any help?\nB: (   )", ["Yes, I'm a helper at this school.", "Yes, could you carry this box?", "No, I'm sorry I'm late again today.", "You're welcome. It was easy to do."], 1, "助けが必要か聞かれ、手伝ってほしいことを伝える。"],
+["A: What would you like for your birthday?\nB: (   )", ["I'd like a new bike.", "I'm very happy to be twelve today.", "It's on May fifth, and I'm happy.", "Yes, I like it very much, Mom."], 0, "What would you like ~?（何がほしい？）には I'd like ~. で答える。"],
+["A: I'm going to make a cake. Do you want to help?\nB: (   )", ["No, you're welcome.", "Yes, it's a cake.", "Sure. I love baking.", "I made it."], 2, "手伝わないかというさそいに Sure.（いいよ）と答える。"],
+["A: I can't find my glasses.\nB: (   )", ["You're welcome.", "I'm sorry to hear that.", "Yes, I'm finding.", "They're on your head."], 3, "さがし物の場所を教えている。"],
+["A: Is it OK if I sit here?\nB: (   )", ["Of course.", "It's nice to meet you.", "Not yet.", "I'm very tired."], 0, "Is it OK if ~?（~してもいいですか）に Of course.（もちろん）。"],
+["A: Which do you want, tea or coffee?\nB: (   )", ["Tea, please.", "Yes, I do.", "I'm fine.", "It's hot."], 0, "A or B?（どちら？）には、どちらかを選んで答える。"],
+["A: How do you spell your name?\nB: (   )", ["K-E-N-T.", "It's a long name.", "At the desk.", "I like my name."], 0, "How do you spell ~?（つづりは？）にはアルファベットで答える。"],
+["A: What's your phone number?\nB: (   )", ["It's a phone.", "Yes, it's mine.", "It's 090-1111-2222.", "I'm at home."], 2, "電話番号をたずねられたので、番号を答える。"],
+["A: Can I leave a message?\nB: (   )", ["Sure. Go ahead.", "It's a big message.", "Nice to meet you.", "Yes, I'm leaving."], 0, "伝言をお願いされて、どうぞと促す。"],
+["A: Do you have any brothers or sisters?\nB: (   )", ["I'm from Tokyo, and I live with my family.", "Yes, I have a younger sister.", "Yes, they are. They go to my school.", "No, he doesn't. He is my father's friend."], 1, "Do you have ~?（~はいますか）には Yes, I do. 型で答える。"],
+["A: What did you have for breakfast?\nB: (   )", ["Yes, it was.", "At seven o'clock.", "I'm hungry.", "I had toast and eggs."], 3, "What（何）を食べたかには食べ物で答える。"],
+["A: Did you enjoy the party?\nB: (   )", ["Yes, I'm a party. It was great.", "At my house, and it started at two.", "I'll enjoy it at my house later.", "Yes, I had a great time."], 3, "Did you ~?（~しましたか）に Yes と感想で答える。"],
+["A: How was your trip to Okinawa?\nB: (   )", ["I stayed at a small hotel for three days.", "It was wonderful. The sea was beautiful.", "I'm going to visit Okinawa next summer.", "It takes about two hours by plane."], 1, "How was ~?（どうだった？）には感想で答える。"],
+["A: Whose turn is it?\nB: (   )", ["It's mine.", "Yes, it is.", "I'm turn.", "It's me."], 0, "Whose turn?（だれの番？）に It's mine.（私の番）。"],
+["A: Do you know how to use this machine?\nB: (   )", ["Yes, it's a machine.", "Yes. I'll show you.", "I'm using a machine.", "No, you're welcome."], 1, "使い方を知っているか聞かれ、教えてあげると答える。"],
+["A: I'll be back in ten minutes.\nB: (   )", ["I'm fine, thank you.", "Yes, it's ten minutes.", "Nice to meet you.", "OK. I'll wait here."], 3, "「10分で戻る」に、待っていると答えるのが自然。"],
+["A: Dinner was great. Thank you very much!\nB: (   )", ["I'm sorry to hear that.", "Please sit down.", "I'm glad you liked it.", "See you at lunch."], 2, "お礼に対して、喜んでもらえてうれしいと答える。"]
 ];
 dialogueData.forEach((d,i)=>{
-  Q.push({cat:"dialogue", id:"d"+i, text:d[0], choices:d[1], answer:d[2], explain:d[3]});
+  Q.push({cat:"dialogue", id:"n"+String(i+1).padStart(3,"0"), text:d[0], choices:d[1], answer:d[2], explain:d[3]});
 });
 
-/* ---- order (語句整序) : present as "正しい英文を選ぶ" 4択に変換 ---- */
+/* ---- order (語句整序) : 「正しい英文を選ぶ」4択に変換 ---- */
 const orderData = [
-["私は毎朝6時に起きます。", ["I get up at six every morning.","I every morning get up at six.","Get up I at six every morning.","At six I every morning get up."], 0, "主語＋動詞＋時間の基本語順：I get up at six every morning."],
-["彼女はピアノを弾くことが得意です。", ["She is good at playing the piano.","She good at is playing the piano.","She playing is good at the piano.","Good at she is playing the piano."], 0, "be good at ~ing「~するのが得意」の形。"],
-["公園で遊んでもいいですか。", ["May I play in the park?", "May play I in the park?", "I may play in the park?", "Play may I in the park?"], 0, "May I ~?「~してもいいですか」の疑問文の形。"],
-["彼は宿題を終える必要があります。", ["He has to finish his homework.","He finish has to his homework.","Has he to finish his homework.","He to has finish his homework."], 0, "have to ~「~しなければならない」（三人称単数はhas to）。"],
-["あなたは何色のかばんが欲しいですか。", ["What color bag do you want?","What do you want color bag?","Color what bag do you want?","Do you want what color bag?"], 0, "What color bag「何色のかばん」を文頭に置く疑問文。"],
-["私は父と野球について話すのが好きです。", ["I like to talk about baseball with my father.","I like about baseball to talk with my father.","I like talk to about baseball with my father.","With my father I like to talk baseball about."], 0, "like to talk about A with B「BとAについて話すのが好き」。"],
-["明日は雨が降るかもしれません。", ["It may rain tomorrow.","It rain may tomorrow.","May it rain tomorrow.","Tomorrow it may rain does."], 0, "It may rain ~「雨が降るかもしれない」。"],
-["この本はあの本より面白いです。", ["This book is more interesting than that one.","This book more is interesting than that one.","This is book interesting more than that one.","More this book is interesting than that one."], 0, "比較級 more interesting than ~。"],
-["彼らは去年、京都を訪れました。", ["They visited Kyoto last year.","They last year visited Kyoto.","Visited they Kyoto last year.","They Kyoto visited last year."], 0, "主語＋動詞（過去形）＋目的語＋時。"],
-["あなたはどれくらい長くここに住んでいますか。", ["How long have you lived here?","How long you have lived here?","You have how long lived here?","Have how long you lived here?"], 0, "現在完了 have you lived の疑問文。"],
-["私にその写真を見せてください。", ["Please show me the picture.","Please show the picture me.","Show please me the picture.","Me please show the picture."], 0, "show 人 物「人に物を見せる」。"],
-["彼女は毎日、犬の散歩をしなければなりません。", ["She has to walk her dog every day.","She walk has to her dog every day.","Has she to walk her dog every day.","She has walk to her dog every day."], 0, "has to walk「散歩させなければならない」。"],
-["これは私が今までに読んだ中で一番おもしろい本です。", ["This is the most interesting book I have ever read.","This is interesting the most book I have ever read.","This the most interesting is book I have ever read.","Most this is the interesting book I have ever read."], 0, "the most interesting book「一番おもしろい本」＋関係詞なしの節。"],
-["何か冷たい飲み物をもらえますか。", ["Can I have something cold to drink?","Can I have cold something to drink?","I can have something cold to drink?","Can have I something cold to drink?"], 0, "something cold to drink「何か冷たい飲み物」の語順。"],
-["彼は宿題をするために、早く起きました。", ["He got up early to do his homework.","He got early up to do his homework.","To do his homework got up early he.","He got up to early do his homework."], 0, "to do his homework「宿題をするために」不定詞の副詞的用法。"]
+["私は毎日、学校まで歩いて行きます。", ["I to school walk every day.", "I every day walk to school.", "Walk I to school every day.", "I walk to school every day."], 3, "主語＋動詞＋場所＋いつ、の基本の語順。"],
+["彼女は先週、新しいかばんを買いました。", ["She bought a new bag last week.", "Bought she a new bag last week.", "She bought a new last week bag.", "She a new bag bought last week."], 0, "主語＋動詞（過去形）＋目的語（a new bag）＋時、の順。"],
+["あなたは昨日、どこへ行きましたか。", ["Where you did go yesterday?", "You where did go yesterday?", "Did where you go yesterday?", "Where did you go yesterday?"], 3, "疑問詞＋did＋主語＋動詞の原形、の順。"],
+["私の兄は野球がとても上手です。", ["My brother is good very at baseball.", "My brother very is good at baseball.", "My brother is very good at baseball.", "Very my brother is good at baseball."], 2, "be動詞＋very＋形容詞（good）＋at ~ の順。"],
+["窓を開けてもいいですか。", ["Open the window may I?", "May I the window open?", "May open I the window?", "May I open the window?"], 3, "May I ＋動詞の原形 ~?「~してもいいですか」。"],
+["私は犬を2匹飼っています。", ["I have dogs two.", "I two dogs have.", "I have two dogs.", "Have I two dogs."], 2, "主語＋動詞＋数＋名詞、の順。"],
+["駅までどのくらいかかりますか。", ["How does long it take to get to the station?", "How long does it take to get to the station?", "How long does it take to the station get to?", "How long it does take to get to the station?"], 1, "How long does it take to ~?「~するのにどのくらいかかりますか」。"],
+["彼は本を読むのが好きです。", ["Likes he reading books.", "He likes books reading.", "He reading likes books.", "He likes reading books."], 3, "like ~ing「~するのが好き」。"],
+["今日は天気がよくありません。", ["The weather is not good today.", "Not the weather is good today.", "The weather is good not today.", "The weather not is good today."], 0, "be動詞の否定文は is not ~ の順。"],
+["私たちは音楽の授業で歌を歌いました。", ["We sang in a song music class.", "We a song sang in music class.", "Sang we a song in music class.", "We sang a song in music class."], 3, "主語＋動詞＋目的語＋場所、の順。"],
+["彼は今、テレビを見ています。", ["He watching is TV now.", "Watching he is TV now.", "He is TV watching now.", "He is watching TV now."], 3, "現在進行形は be動詞＋動詞ing の順。"],
+["私は今夜、宿題をするつもりです。", ["I am to going do my homework tonight.", "I am going do to my homework tonight.", "I am going to do my homework tonight.", "I going am to do my homework tonight."], 2, "be going to ＋動詞の原形「~するつもり」。"],
+["明日は雨が降るでしょう。", ["It will tomorrow rain.", "It rain will tomorrow.", "Rain it will tomorrow.", "It will rain tomorrow."], 3, "will ＋動詞の原形の順。"],
+["私は母を手伝わなければなりません。", ["I to have help my mother.", "I help have to my mother.", "I have to help my mother.", "I have help to my mother."], 2, "have to ＋動詞の原形「~しなければならない」。"],
+["彼女は歌うのが得意です。", ["She is at good singing.", "She is good at singing.", "She is singing good at.", "She good is at singing."], 1, "be good at ~ing「~するのが得意」。"],
+["あなたは何時に起きますか。", ["What time you do get up?", "What do time you get up?", "Do you what time get up?", "What time do you get up?"], 3, "What time ＋ do you ＋動詞? の順。"],
+["これは私のお気に入りの本です。", ["This is my favorite book.", "This is book my favorite.", "This is favorite my book.", "This my favorite is book."], 0, "「私の」＋形容詞＋名詞（my favorite book）の順。"],
+["私は友だちと公園で遊びました。", ["I in the park played with my friends.", "I played with my friends in park the.", "Played I in the park with my friends.", "I played in the park with my friends."], 3, "主語＋動詞（過去形）＋場所＋with ~ の順。"],
+["私の父は毎朝、新聞を読みます。", ["Reads my father a newspaper every morning.", "My father a newspaper reads every morning.", "My father reads a newspaper every morning.", "My father reads every morning a newspaper."], 2, "主語＋動詞＋目的語＋時、の順。"],
+["彼らはサッカーをするのが好きです。", ["They like play to soccer.", "They like to play soccer.", "Like they to play soccer.", "They to like play soccer."], 1, "like to ＋動詞の原形「~するのが好き」。"],
+["私は昨日、この本を読み終えました。", ["I finished yesterday this book.", "I finished this book yesterday.", "I this book finished yesterday.", "Finished I this book yesterday."], 1, "主語＋動詞（過去形）＋目的語＋時、の順。"],
+["公園には大きな木がたくさんあります。", ["There many big trees are in the park.", "There are many big in trees the park.", "There are big many trees in the park.", "There are many big trees in the park."], 3, "There are ＋複数名詞 ＋場所。many big trees の順に注意。"],
+["机の上に本が1冊あります。", ["There is on a book the desk.", "There is a book on the desk.", "There a book is on the desk.", "There is a book the on desk."], 1, "There is ＋単数名詞 ＋場所。"],
+["あなたの学校には生徒が何人いますか。", ["How many students there are in your school?", "How many students are there in your school?", "How many are students there in your school?", "How students many are there in your school?"], 1, "How many ＋名詞 ＋ are there ~?「何人（いくつ）いますか」。"],
+["その映画はとてもおもしろかったです。", ["Very the movie was interesting.", "The movie was interesting very.", "The movie very was interesting.", "The movie was very interesting."], 3, "be動詞＋very＋形容詞の順。"],
+["私はあなたより背が高いです。", ["I am taller you than.", "I taller am than you.", "I am taller than you.", "I am than taller you."], 2, "比較級 ＋ than ~「~より…」。"],
+["彼は私のクラスで一番足が速いです。", ["He is fastest the runner in my class.", "He the fastest is runner in my class.", "He is the runner fastest in my class.", "He is the fastest runner in my class."], 3, "the ＋最上級 ＋名詞 ＋ in ~ の順。"],
+["これはあれより（値段が）高いです。", ["This is more expensive than that.", "This is more than expensive that.", "This is expensive more than that.", "This more is expensive than that."], 0, "more ＋形容詞 ＋ than ~ の順。"],
+["私は犬のほうが猫より好きです。", ["I like dogs better than cats.", "I like better dogs than cats.", "I like dogs than better cats.", "I better like dogs than cats."], 0, "like A better than B「BよりAが好き」。"],
+["私は3時までに家に帰らなければなりません。", ["I go must home by three.", "I must go by home three.", "I must home go by three.", "I must go home by three."], 3, "must ＋動詞の原形。go home の順。"],
+["このかばんを買ってもいいですか。", ["Can I buy this bag?", "Can I this bag buy?", "Buy can I this bag?", "Can buy I this bag?"], 0, "Can I ＋動詞の原形 ~?「~してもいいですか」。"],
+["もう一度言ってください。", ["Say please it again.", "Please say again it.", "Please it say again.", "Please say it again."], 3, "Please ＋動詞の原形。say it again の順。"],
+["私にあなたの名前を教えてください。", ["Tell please me your name.", "Please tell your me name.", "Please me tell your name.", "Please tell me your name."], 3, "tell ＋人 ＋物「人に物を伝える」。"],
+["ドアを閉めてくれませんか。", ["Can you the door close?", "Can you close the door?", "Close can you the door?", "Can close you the door?"], 1, "Can you ＋動詞の原形 ~?「~してくれませんか」。"],
+["何を飲みたいですか。", ["What do you want to drink?", "What you do want to drink?", "What do you want drink to?", "Do you what want to drink?"], 0, "What do you want to ~?「何を~したいですか」。"],
+["あなたはいつ宿題をしますか。", ["Do you when do your homework?", "When do you do your homework?", "When you do do your homework?", "When do you your homework do?"], 1, "疑問詞＋do you＋動詞＋目的語の順。"],
+["この本はだれのですか。", ["Whose this is book?", "Book whose is this?", "Whose book is this?", "Whose is book this?"], 2, "Whose ＋名詞 ＋ is this?「これはだれの~？」。"],
+["あなたの誕生日はいつですか。", ["When your birthday is?", "Is when your birthday?", "When birthday is your?", "When is your birthday?"], 3, "When ＋ be動詞 ＋主語? の順。"],
+["あの少年はだれですか。", ["That boy who is?", "Who that boy is?", "Who is that boy?", "Is who that boy?"], 2, "Who ＋ be動詞 ＋主語? の順。"],
+["彼女は何を作っていますか。", ["What is she making?", "What is making she?", "Is what she making?", "What she is making?"], 0, "What ＋ be動詞 ＋主語 ＋動詞ing? の順。"],
+["私は先月、京都を訪れました。", ["I Kyoto visited last month.", "Visited I Kyoto last month.", "I visited Kyoto last month.", "I visited last month Kyoto."], 2, "主語＋動詞（過去形）＋場所＋時、の順。"],
+["私たちは日曜日に買い物に行きました。", ["We went on shopping Sunday.", "Went we shopping on Sunday.", "We went shopping on Sunday.", "We shopping went on Sunday."], 2, "go shopping「買い物に行く」＋ on ＋曜日。"],
+["彼は昨夜、早く寝ました。", ["He went to bed early last night.", "He went early to bed last night.", "He went to early bed last night.", "He to bed went early last night."], 0, "go to bed「寝る」のまとまりは崩さない。"],
+["私の母は私にかさをくれました。", ["Gave my mother me an umbrella.", "My mother me gave an umbrella.", "My mother gave me an umbrella.", "My mother gave an umbrella me."], 2, "give ＋人 ＋物「人に物をあげる」。"],
+["先生は私たちに英語を教えてくれます。", ["Teaches our teacher us English.", "Our teacher teaches English us.", "Our teacher us teaches English.", "Our teacher teaches us English."], 3, "teach ＋人 ＋物「人に物を教える」。"],
+["彼は私に手紙を書きました。", ["He me wrote a letter.", "He wrote me a letter.", "He wrote a letter me.", "Wrote he me a letter."], 1, "write ＋人 ＋物「人に物を書く」。"],
+["私は朝ごはんにパンを食べました。", ["I ate for breakfast bread.", "I ate bread for breakfast.", "Ate I bread for breakfast.", "I bread ate for breakfast."], 1, "主語＋動詞＋目的語＋ for breakfast の順。"],
+["私たちは昨日、海で泳ぎました。", ["We in the sea swam yesterday.", "We swam yesterday in sea the.", "We swam in the sea yesterday.", "Swam we in the sea yesterday."], 2, "主語＋動詞＋場所＋時、の順。"],
+["彼女は電車で学校へ行きます。", ["She goes to school by train.", "She by train goes to school.", "She to school goes by train.", "Goes she to school by train."], 0, "主語＋動詞＋行き先＋手段（by train）の順。"],
+["私は兄とテニスをしました。", ["I played tennis with my brother.", "I played with tennis my brother.", "I tennis played with my brother.", "Played I tennis with my brother."], 0, "主語＋動詞＋目的語＋ with ~ の順。"],
+["私は水を飲みたいです。", ["I want drink to water.", "I to want drink water.", "I want to drink water.", "Want I to drink water."], 2, "want to ＋動詞の原形「~したい」。"],
+["あなたはピアノを弾くことができますか。", ["Can you the piano play?", "Can you play the piano?", "Play can you the piano?", "Can play you the piano?"], 1, "Can you ＋動詞の原形 ~?「~できますか」。"],
+["私は速く泳げません。", ["I cannot swim fast.", "I swim cannot fast.", "I cannot fast swim.", "I fast cannot swim."], 0, "cannot ＋動詞の原形。swim fast の順。"],
+["私は数学が好きではありません。", ["I do not like math.", "I not do like math.", "I do like not math.", "I like not do math."], 0, "一般動詞の否定文は do not ＋動詞の原形。"],
+["彼は音楽を聞くのが好きです。", ["He likes listening to music.", "He listening likes to music.", "He likes to listening music.", "He likes listening music to."], 0, "listen to ~「~を聞く」。like ~ing の形。"],
+["私は将来、医者になりたいです。", ["I want to be a doctor in the future.", "I want to be a doctor the in future.", "I want be to a doctor in the future.", "I to want be a doctor in the future."], 0, "want to be ~「~になりたい」。in the future「将来」。"],
+["私たちは英語を勉強しなければなりません。", ["We study have to English.", "We have to study English.", "We have study to English.", "We to have study English."], 1, "have to ＋動詞の原形。"],
+["彼女は日本語を話せます。", ["Speak she can Japanese.", "She can speak Japanese.", "She speak can Japanese.", "She can Japanese speak."], 1, "主語＋ can ＋動詞の原形＋目的語。"],
+["私は新しい自転車がほしいです。", ["I want a new bike.", "Want I a new bike.", "I want new a bike.", "I a want new bike."], 0, "a ＋形容詞 ＋名詞（a new bike）の順。"],
+["あなたは何のスポーツが好きですか。", ["What sport you do like?", "What do sport you like?", "What sport do you like?", "Do you what sport like?"], 2, "What ＋名詞 ＋ do you ＋動詞? の順。"],
+["その少女はとても上手に歌います。", ["The girl very sings well.", "The girl sings well very.", "The girl sings very well.", "Sings the girl very well."], 2, "動詞 ＋ very well「とても上手に」の順。"],
+["私の姉は看護師です。", ["Nurse my sister is a.", "My sister is a nurse.", "My sister a nurse is.", "My sister is nurse a."], 1, "主語 ＋ be動詞 ＋ a ＋名詞 の順。"],
+["私たちの学校は駅の近くにあります。", ["Our school is near the station.", "Our school near is the station.", "Our school is the near station.", "Our is school near the station."], 0, "主語 ＋ be動詞 ＋ near ~ の順。"],
+["この箱はとても重いです。", ["This box is very heavy.", "This box is heavy very.", "This box very is heavy.", "This is box very heavy."], 0, "主語 ＋ be動詞 ＋ very ＋形容詞 の順。"],
+["今日はとても暑いです。", ["It very is hot today.", "It is very today hot.", "It is very hot today.", "It is hot very today."], 2, "It is ＋ very ＋形容詞 ＋ today の順。"],
+["彼は私の一番の友だちです。", ["He my best is friend.", "He is my best friend.", "He is best my friend.", "He is my friend best."], 1, "「私の」＋最上級 ＋名詞（my best friend）の順。"],
+["私の家族は5人です。", ["There are people five in my family.", "There are five people my in family.", "There five people are in my family.", "There are five people in my family."], 3, "There are ＋数 ＋名詞 ＋場所 の順。"],
+["この町には図書館がありません。", ["There is no in library this town.", "There is no library in this town.", "There no is library in this town.", "There is library no in this town."], 1, "There is no ＋名詞「~がない」。"],
+["窓のそばにかわいい猫がいます。", ["There is a cute cat the by window.", "There is a cat cute by the window.", "There a cute cat is by the window.", "There is a cute cat by the window."], 3, "There is ＋ a ＋形容詞 ＋名詞 ＋場所 の順。"],
+["彼女は台所にいます。", ["She is the in kitchen.", "She is in kitchen the.", "She is in the kitchen.", "She in is the kitchen."], 2, "主語 ＋ be動詞 ＋ in the ~ の順。"],
+["私は7時に朝ごはんを食べます。", ["Eat I breakfast at seven.", "I eat at breakfast seven.", "I eat breakfast at seven.", "I breakfast eat at seven."], 2, "主語＋動詞＋目的語＋ at ＋時刻 の順。"],
+["私の誕生日は5月です。", ["My birthday is in May.", "My birthday is May in.", "My is birthday in May.", "My birthday in is May."], 0, "月の前は in。主語＋ be動詞＋ in ＋月 の順。"],
+["私は夏が一番好きです。", ["I summer like the best.", "I like summer the best.", "The I like summer best.", "I like best the summer."], 1, "like ＋名詞 ＋ the best「~が一番好き」。"],
+["彼は毎週日曜日に図書館へ行きます。", ["He goes to the library every Sunday.", "He goes the library to every Sunday.", "He goes to every Sunday the library.", "Goes he to the library every Sunday."], 0, "主語＋動詞＋行き先＋いつ、の順。"],
+["私は学校の前で友だちを待ちました。", ["I waited for my friend of in front the school.", "I waited my friend for in front of the school.", "I waited for my friend in front of the school.", "I for waited my friend in front of the school."], 2, "wait for ~「~を待つ」。in front of ~「~の前で」。"],
+["彼女は毎年、夏にここへ来ます。", ["Comes she here every summer.", "She comes here every summer.", "She comes every here summer.", "She here comes every summer."], 1, "主語＋動詞＋場所＋いつ、の順。"],
+["私の父は先週、東京へ行きました。", ["My father went to Tokyo last week.", "My father to Tokyo went last week.", "Went my father to Tokyo last week.", "My father went Tokyo to last week."], 0, "went to ＋場所 の形。主語＋動詞＋行き先＋時。"],
+["私は図書館で宿題をしました。", ["I my homework did in the library.", "I did my homework in the library.", "I did in my homework the library.", "Did I my homework in the library."], 1, "主語＋動詞＋目的語＋場所 の順。"],
+["駅の近くに大きな店があります。", ["There is a big near shop the station.", "There is a shop big near the station.", "There a big shop is near the station.", "There is a big shop near the station."], 3, "There is ＋ a ＋形容詞 ＋名詞 ＋場所 の順。"],
+["私たちは公園で昼食を食べました。", ["We ate lunch in the park.", "We lunch ate in the park.", "We ate in lunch the park.", "Ate we lunch in the park."], 0, "主語＋動詞＋目的語＋場所 の順。"],
+["私は宿題を終えるのに2時間かかりました。", ["It took two hours me to finish my homework.", "It took me two hours to finish my homework.", "It me took two hours to finish my homework.", "It took me to two hours finish my homework."], 1, "It takes ＋人 ＋時間 ＋ to ~「人が~するのに時間がかかる」。"],
+["私は寝る前に歯をみがきます。", ["I brush my teeth I before go to bed.", "I brush before my teeth I go to bed.", "I brush my teeth before I go to bed.", "I brush my teeth before go I to bed."], 2, "before ＋主語 ＋動詞「~する前に」。"],
+["私はあなたに会えてうれしいです。", ["I am glad see to you.", "I am to glad see you.", "I am glad to see you.", "I glad am to see you."], 2, "be glad to ＋動詞の原形「~してうれしい」。"],
+["私は何か食べるものがほしいです。", ["I want to something eat.", "I something want to eat.", "I want eat something to.", "I want something to eat."], 3, "something to ＋動詞「~するための何か」。"],
+["彼はお兄さんと同じくらい背が高いです。", ["He as is tall as his brother.", "He is as his tall brother as.", "He is tall as as his brother.", "He is as tall as his brother."], 3, "as ＋形容詞 ＋ as ~「~と同じくらい…」。"],
+["私の誕生日は先週でした。", ["My birthday was week last.", "My was birthday last week.", "My birthday was last week.", "My birthday last was week."], 2, "主語＋ was ＋ last week の順。"],
+["私たちは雨が降っていたので家にいました。", ["We stayed home it because was raining.", "We stayed home because it was raining.", "We stayed because home it was raining.", "We home stayed because it was raining."], 1, "because ＋主語 ＋動詞「~なので」。"],
+["私は電話をかけるために外に出ました。", ["I out went to make a phone call.", "I went to out make a phone call.", "I went out to make a phone call.", "I went out to a make phone call."], 2, "to ＋動詞の原形「~するために」。make a phone call の順。"],
+["彼は私が来たとき、料理をしていました。", ["He was cooking when I came.", "He was when cooking I came.", "He was cooking I when came.", "He cooking was when I came."], 0, "過去進行形 was cooking ＋ when ＋主語 ＋動詞。"],
+["もし明日晴れたら、ピクニックに行きましょう。", ["If it sunny is tomorrow, let's go on a picnic.", "If it is sunny tomorrow, let's go on a picnic.", "If it is sunny tomorrow, let's on go a picnic.", "If it is tomorrow sunny, let's go on a picnic."], 1, "If ＋主語 ＋ be動詞 ＋形容詞「もし~なら」。go on a picnic の順。"],
+["私の兄は私より3歳年上です。", ["My brother is three older years than me.", "My brother is three years older than me.", "My brother is older three years than me.", "My brother three years is older than me."], 1, "three years older than ~「~より3歳年上」。"],
+["彼はいつも私を手伝ってくれます。", ["He helps always me.", "He always me helps.", "He me always helps.", "He always helps me."], 3, "always は動詞の前に置く。helps me の順。"],
+["私は昨日の夜、宿題を忘れました。", ["I forgot my homework last night.", "Forgot I my homework last night.", "I forgot last night my homework.", "I my homework forgot last night."], 0, "主語＋動詞（過去形）＋目的語＋時、の順。"],
+["この歌はみんなに人気があります。", ["This is song popular with everyone.", "This song popular is with everyone.", "This song is popular with everyone.", "This song is with popular everyone."], 2, "be popular with ~「~に人気がある」。"],
+["ケンはなぜ今日、学校を休んだのですか。", ["Why was absent Ken from school today?", "Why was Ken absent from school today?", "Was why Ken absent from school today?", "Why Ken was absent from school today?"], 1, "Why ＋ be動詞 ＋主語 ＋形容詞? の順。"],
+["あなたはどうやって学校へ来ますか。", ["How you do come to school?", "Do you how come to school?", "How do you to come school?", "How do you come to school?"], 3, "How ＋ do you ＋動詞? の順。"],
+["私は犬の散歩をするために早く起きました。", ["I got up to early walk my dog.", "I got up early to walk my dog.", "I got early up to walk my dog.", "I got up early walk to my dog."], 1, "get up early「早く起きる」＋ to ＋動詞「~するために」。"],
+["今日の午後はひまですか。", ["Are you free this afternoon?", "Are you this free afternoon?", "Are free you this afternoon?", "Free are you this afternoon?"], 0, "Are you ＋形容詞 ~? の順。"],
+["私に何か飲み物をください。", ["Please give something me to drink.", "Please me give something to drink.", "Please give me something to drink.", "Please give me to something drink."], 2, "give ＋人 ＋物「人に物をあげる」。something to drink「飲むための何か」。"],
+["私があなたを手伝いましょうか。", ["Shall I you help?", "Shall help I you?", "Help shall I you?", "Shall I help you?"], 3, "Shall I ＋動詞の原形 ~?「~しましょうか」。"]
 ];
 orderData.forEach((d,i)=>{
-  Q.push({cat:"order", id:"o"+i, text:"日本語の意味に合う正しい英文を選びなさい。\n「"+d[0]+"」", choices:d[1], answer:d[2], explain:d[3]});
+  Q.push({cat:"order", id:"n"+String(i+1).padStart(3,"0"), text:"日本語の意味に合う正しい英文を選びなさい。\n「"+d[0]+"」", choices:d[1], answer:d[2], explain:d[3]});
 });
 
-/* ---- reading (読解) ---- */
+/* ---- reading (読解) : 文章ごとに設問がまとまっています ---- */
 const readingSets = [
 {
-  passage:"【掲示】\nSchool Library Book Sale\n\nDate: Saturday, September 12\nTime: 10:00 a.m. to 3:00 p.m.\nPlace: School Gym\n\nWe will sell old books for 50 yen to 200 yen each. Please bring your own bag. If you want to donate books, bring them to the library before September 10.",
+  passage:"【掲示】\nCity Swimming Pool\n\nOpen: July 15 to August 31\nHours: 9:00 a.m. to 5:00 p.m.\nClosed: Every Monday\n\nChildren under ten years old must come with an adult. Please bring a swimming cap. You can buy one at the shop in the pool for 300 yen.",
   qs:[
-    ["What time does the book sale start?",["9:00 a.m.","10:00 a.m.","3:00 p.m.","12:00 p.m."],1,"Time: 10:00 a.m. to 3:00 p.m. とあるので開始は10時。"],
-    ["What should students bring if they want to buy books?",["A library card","Their own bag","A pencil","Money only, no bag needed"],1,"Please bring your own bag. と書かれている。"],
-    ["When is the last day to donate books?",["September 10","September 12","September 15","September 9"],0,"before September 10（9月10日より前）に持ってくるよう指示がある。"]
+    ["Which day is the pool closed?", ["Friday", "Monday", "Sunday", "Saturday"], 1, "Closed: Every Monday と書かれている。"],
+    ["Who must come with an adult?", ["People over sixty", "Everyone who swims", "Students from other cities", "Children under ten"], 3, "Children under ten years old must come with an adult. とある。"],
+    ["Where can people buy a swimming cap?", ["At the station", "At a bookstore", "At the shop in the pool", "At the school"], 2, "You can buy one at the shop in the pool とある。"]
   ]
 },
 {
-  passage:"【Eメール】\nFrom: Sophie\nTo: Mia\nSubject: This weekend\n\nHi Mia,\nAre you free this Sunday? My family is going to have a barbecue at the park at noon. Can you come? Please bring a drink if you can. My brother will bring his soccer ball, so we can play after lunch.\nSophie\n\nFrom: Mia\nTo: Sophie\nSubject: Re: This weekend\n\nHi Sophie,\nSure, I'd love to come! I'll bring some juice. What time should I arrive? I have a piano lesson until 11:30, but I can be at the park by 12:15.\nMia",
+  passage:"【掲示】\nLost Umbrella\n\nI lost my black umbrella with white dots last Tuesday. I think I left it near the gym after club activities. It was a present from my grandmother, so it is very important to me.\n\nIf you find it, please bring it to Room 12 or tell Mr. Ito.\n\nHana Mori, Class 2-B",
   qs:[
-    ["What will Sophie's family do this Sunday?",["Go to a piano lesson","Have a barbecue","Play soccer at school","Visit Mia's house"],1,"My family is going to have a barbecue at the park at noon."],
-    ["What will Mia bring?",["A soccer ball","A cake","Some juice","A book"],2,"I'll bring some juice. とある。"],
-    ["What time can Mia get to the park?",["11:30","12:00","12:15","1:00"],2,"I can be at the park by 12:15. と書かれている。"]
+    ["What is Hana looking for?", ["Her book", "Her umbrella", "Her gym shoes", "Her bag"], 1, "I lost my black umbrella とある。"],
+    ["Where does Hana think she left it?", ["Near the gym", "In Room 12", "At the park", "On the bus"], 0, "I think I left it near the gym とある。"],
+    ["Why is it important to Hana?", ["She uses it for club activities.", "It was very expensive.", "It was a present from her grandmother.", "Her friend made it."], 2, "It was a present from my grandmother と理由が書かれている。"]
   ]
 },
 {
-  passage:"【物語文】\nYuta is a junior high school student in Osaka. He loves drawing pictures. Last spring, he joined the art club at his school. At first, he was shy and didn't talk much to the other members. But one member, Kota, often talked to him about manga and anime. They soon became good friends.\nOne day, the art club had a contest. Yuta and Kota worked together on a big picture for two weeks. Their picture won second place in the contest. Yuta was very happy and said, \"Drawing with a friend was more fun than drawing alone.\" Now, Yuta and Kota practice drawing together every weekend.",
+  passage:"【掲示】\nCooking Club Needs You!\n\nDo you like cooking? Join us! We meet every Thursday after school in the cooking room. This month, we will make pizza. In November, we will make cookies for the school festival.\n\nYou don't need to bring anything, but please wear an apron. Come to the cooking room this Thursday and try it!",
   qs:[
-    ["What club did Yuta join last spring?",["The soccer club","The art club","The music club","The English club"],1,"Last spring, he joined the art club at his school."],
-    ["How did Yuta and Kota become friends?",["They were in the same class.","Kota often talked to him about manga and anime.","They lived in the same town.","They met at a soccer game."],1,"Kota often talked to him about manga and anime. They soon became good friends."],
-    ["What did Yuta say about drawing with a friend?",["It was more difficult than drawing alone.","It was more fun than drawing alone.","It was more boring than drawing alone.","It took less time than drawing alone."],1,"Drawing with a friend was more fun than drawing alone."],
-    ["What do Yuta and Kota do now?",["They practice drawing together every weekend.","They join a soccer team.","They study English together.","They work at a shop."],0,"Now, Yuta and Kota practice drawing together every weekend."]
+    ["When does the Cooking Club meet?", ["Every Tuesday morning", "Every Thursday after school", "Every weekend", "Every day at lunch time"], 1, "We meet every Thursday after school とある。"],
+    ["What will the club make in November?", ["Bread", "Cakes", "Cookies", "Pizza"], 2, "In November, we will make cookies とある。pizza は今月。"],
+    ["What should new members wear?", ["A school uniform", "Gloves", "A hat", "An apron"], 3, "please wear an apron とある。"]
+  ]
+},
+{
+  passage:"【掲示】\nWinter Sale at Green Shoes\n\nDecember 20 to December 25\nAll shoes are 30% off!\nBuy two pairs and get a free bag.\nOpen from 10:00 a.m. to 8:00 p.m.\n\nCome early. Only 100 free bags are available.",
+  qs:[
+    ["When does the sale end?", ["December 30", "December 20", "December 31", "December 25"], 3, "December 20 to December 25 なので終わりは25日。"],
+    ["What will customers get if they buy two pairs of shoes?", ["A free bag", "A free hat", "A coupon", "Another pair of shoes"], 0, "Buy two pairs and get a free bag. とある。"],
+    ["Why should customers come early?", ["The sale is only one day.", "Only 100 free bags are available.", "The shop closes at noon.", "The shoes are 50% off."], 1, "Only 100 free bags are available. が理由。"]
+  ]
+},
+{
+  passage:"【掲示】\nScience Museum\n\nOpen: 10:00 a.m. to 5:00 p.m. every day except Wednesday\nTickets: Adults 800 yen / Students 400 yen / Children under six: free\n\nPlease do not eat or drink in the exhibition rooms. You can take pictures, but please do not use a flash.",
+  qs:[
+    ["How much is a ticket for a student?", ["Free", "400 yen", "800 yen", "600 yen"], 1, "Students 400 yen と書かれている。"],
+    ["On which day is the museum closed?", ["Friday", "Sunday", "Monday", "Wednesday"], 3, "every day except Wednesday（水曜日以外毎日）→ 水曜は休み。"],
+    ["What can visitors do in the museum?", ["Eat lunch in the exhibition rooms", "Come on Wednesday", "Use a flash", "Take pictures without a flash"], 3, "You can take pictures, but please do not use a flash. とある。"]
+  ]
+},
+{
+  passage:"【掲示】\nNew Bus Schedule\n\nFrom April 1, Bus No. 3 will leave Sakura Station at 7:10 a.m. After that, it will leave every 20 minutes. The last bus will leave at 9:30 p.m.\n\nOn Sundays, there will be fewer buses. They will leave every 40 minutes.\n\nIf you have any questions, please call the bus office.",
+  qs:[
+    ["What time does the first bus leave Sakura Station?", ["7:40 a.m.", "7:20 a.m.", "9:30 p.m.", "7:10 a.m."], 3, "will leave Sakura Station at 7:10 a.m. とある。"],
+    ["How often will buses leave on Sundays?", ["Every 20 minutes", "There will be no buses.", "Every 40 minutes", "Every hour"], 2, "On Sundays ... every 40 minutes とある。"],
+    ["What can people do if they have questions?", ["Go to Sakura Station", "Send an e-mail", "Call the bus office", "Ask the bus driver"], 2, "please call the bus office とある。"]
+  ]
+},
+{
+  passage:"【掲示】\nPark Cleaning Day\n\nDate: Saturday, May 10\nTime: 8:00 a.m. to 10:00 a.m.\nPlace: Meet at the park gate\n\nPlease bring gloves and a bag. We will give you a drink after the cleaning. If it rains, we will clean the park on May 17.",
+  qs:[
+    ["Where should the volunteers meet?", ["At the station", "At the school", "At the library", "At the park gate"], 3, "Place: Meet at the park gate とある。"],
+    ["What will the volunteers get after the cleaning?", ["A drink", "A T-shirt", "A bag", "A lunch box"], 0, "We will give you a drink after the cleaning. とある。bag は持ってくる物。"],
+    ["What will happen if it rains on May 10?", ["They will meet in the school gym.", "They will clean the park on May 17.", "They will clean the park in the afternoon.", "They will clean the school instead."], 1, "If it rains, we will clean the park on May 17. とある。"]
+  ]
+},
+{
+  passage:"【掲示】\nEnglish Speech Contest\n\nDate: Friday, November 14\nPlace: School hall\nWho can join: Students in grades 1 to 3\nTopic: My Dream\nEach speech should be two minutes long.\n\nIf you want to join, please tell Ms. Green by November 1.",
+  qs:[
+    ["What is the topic of the speech?", ["My School", "My Dream", "My Family", "My Hobby"], 1, "Topic: My Dream と書かれている。"],
+    ["How long should each speech be?", ["Ten minutes", "One minute", "Five minutes", "Two minutes"], 3, "Each speech should be two minutes long. とある。"],
+    ["Who should students tell if they want to join?", ["The principal", "Ms. Green", "Their parents", "Mr. Brown"], 1, "please tell Ms. Green by November 1 とある。"]
+  ]
+},
+{
+  passage:"【Eメール】\nFrom: Tom\nTo: Ken\nSubject: Baseball game\n\nHi Ken,\nAre you free this Saturday? My father has two tickets for a baseball game. The game starts at 2:00 p.m. Do you want to come with me? Please meet me at the station at 1:00 p.m. My father will drive us to the stadium. Don't forget to bring your glove. Maybe we can catch a ball!\n\nTom",
+  qs:[
+    ["What does Tom want to do on Saturday?", ["Buy a new glove", "Go to a baseball game with Ken", "Watch a movie at home", "Play baseball in the park"], 1, "My father has two tickets for a baseball game ... come with me とある。"],
+    ["Where will Ken meet Tom?", ["At the station", "At Tom's house", "At the park", "At the stadium"], 0, "Please meet me at the station at 1:00 p.m. とある。"],
+    ["What should Ken bring?", ["A ball", "Some food", "His glove", "His ticket"], 2, "Don't forget to bring your glove. とある。"]
+  ]
+},
+{
+  passage:"【Eメール】\nFrom: Anna\nTo: Grandma\nSubject: Thank you\n\nDear Grandma,\nThank you for the beautiful scarf. It is my favorite color, blue. I wore it to school today, and my friends said, \"It's nice!\" Next week, my class will go to Nara on a school trip. I will take many pictures there and send them to you.\n\nLove,\nAnna",
+  qs:[
+    ["What did Grandma send to Anna?", ["A hat", "A scarf", "A book", "A bag"], 1, "Thank you for the beautiful scarf. とある。"],
+    ["What did Anna's friends say about it?", ["They did not like the color.", "They said it was nice.", "They said it was too small.", "They did not say anything."], 1, "my friends said, \"It's nice!\" とある。"],
+    ["What will Anna do on the trip to Nara?", ["Buy a scarf for Grandma", "Stay at home", "Take pictures and send them to Grandma", "Visit Grandma"], 2, "I will take many pictures there and send them to you. とある。"]
+  ]
+},
+{
+  passage:"【Eメール】\nFrom: Emma\nTo: Lisa\nSubject: Our plan\n\nHi Lisa,\nI'm sorry, but I can't go to the movie on Saturday. I have to go to my grandmother's house with my family. Can we go on Sunday instead? There is a movie at 3:00 p.m. After the movie, we can have ice cream at the new shop near the theater.\n\nEmma",
+  qs:[
+    ["Why can't Emma go to the movie on Saturday?", ["She has to study.", "She has a piano lesson.", "She has to go to her grandmother's house.", "She is sick."], 2, "I have to go to my grandmother's house とある。"],
+    ["When does Emma want to go to the movie?", ["On Saturday", "On Monday", "On Sunday", "On Friday"], 2, "Can we go on Sunday instead? とある。"],
+    ["What will they do after the movie?", ["Go shopping", "Have ice cream", "Do their homework", "Visit Emma's grandmother"], 1, "After the movie, we can have ice cream とある。"]
+  ]
+},
+{
+  passage:"【Eメール】\nFrom: Mr. Brown\nTo: Class 1-A\nSubject: English homework\n\nHello, everyone.\nPlease write five sentences about your favorite season. Tell me why you like it. You can write about the weather, food, or things you do in that season. Please bring your homework to class on Monday. If you have any questions, ask me after school today.\n\nMr. Brown",
+  qs:[
+    ["What is the homework about?", ["Students' school life", "Students' family", "Students' favorite season", "Students' summer vacation"], 2, "write five sentences about your favorite season とある。"],
+    ["When should students bring their homework?", ["On Monday", "On Sunday", "On Friday", "Today"], 0, "bring your homework to class on Monday とある。"],
+    ["What should students do if they have questions?", ["Look in the textbook", "Ask Mr. Brown after school today", "Ask their parents", "E-mail him on Monday"], 1, "ask me after school today とある。"]
+  ]
+},
+{
+  passage:"【Eメール】\nFrom: Yui\nTo: Jack\nSubject: My school\n\nHi Jack,\nThank you for your e-mail. I'm in the tennis club at my school. We practice after school on Tuesdays and Fridays. I'm not a good player yet, but it's a lot of fun. Do you belong to any clubs at your school? Please tell me about your school life.\n\nYui",
+  qs:[
+    ["What club is Yui in?", ["The music club", "The soccer club", "The art club", "The tennis club"], 3, "I'm in the tennis club とある。"],
+    ["When does Yui practice?", ["On weekends", "On Mondays and Thursdays", "Every day", "On Tuesdays and Fridays"], 3, "We practice after school on Tuesdays and Fridays. とある。"],
+    ["What does Yui ask Jack?", ["If he likes tennis", "If he belongs to any clubs", "If he can visit Japan", "If he has a pet"], 1, "Do you belong to any clubs at your school? とたずねている。"]
+  ]
+},
+{
+  passage:"【Eメール】\nFrom: Mike\nTo: Sara\nSubject: Your book\n\nHi Sara,\nThank you for lending me your book. I finished reading it last night. The story was exciting, especially the end. Can I return it to you on Monday? I'll see you at school. I want to talk about the story with you.\n\nMike",
+  qs:[
+    ["What did Mike do last night?", ["He wrote a story.", "He lost a book.", "He finished reading a book.", "He bought a book."], 2, "I finished reading it last night. とある。"],
+    ["What did Mike think about the story?", ["It was too long.", "It was boring.", "It was sad.", "It was exciting."], 3, "The story was exciting とある。"],
+    ["When will Mike return the book?", ["Tomorrow", "Tonight", "On Monday", "On Sunday"], 2, "Can I return it to you on Monday? とある。"]
+  ]
+},
+{
+  passage:"【Eメール】\nFrom: Mrs. Wood\nTo: Ms. Lee\nSubject: Sam\n\nDear Ms. Lee,\nSam has a cold. He has a fever, so he can't come to school on Tuesday and Wednesday. The doctor said he should stay home and rest. He will come back on Thursday if he feels better. Please tell him about the homework.\n\nThank you,\nMrs. Wood",
+  qs:[
+    ["Why can't Sam go to school?", ["He has a test.", "He has a cold.", "He has a trip.", "He lost his bag."], 1, "Sam has a cold. He has a fever とある。"],
+    ["When will Sam come back to school?", ["On Wednesday", "On Thursday, if he feels better", "On Tuesday", "On Friday"], 1, "He will come back on Thursday if he feels better. とある。"],
+    ["What does Mrs. Wood want Ms. Lee to do?", ["Tell Sam about the homework", "Send some medicine", "Call the doctor", "Visit Sam's house"], 0, "Please tell him about the homework. とある。"]
+  ]
+},
+{
+  passage:"【Eメール】\nFrom: Lucy\nTo: Meg and Kate\nSubject: Help me!\n\nHi Meg and Kate,\nMy mother's birthday is next Sunday. I want to make a cake for her, but I'm not good at cooking. Can you help me? Please come to my house at 10:00 a.m. on Saturday. We can make the cake together and practice. I'll buy the eggs and milk. Could you bring some strawberries?\n\nLucy",
+  qs:[
+    ["What does Lucy want to do?", ["Make a birthday cake", "Have a party at school", "Buy a present", "Go shopping with friends"], 0, "I want to make a cake for her（母）とある。"],
+    ["When will Meg and Kate go to Lucy's house?", ["On Saturday at 2:00 p.m.", "On Friday after school", "On Sunday at 10:00 a.m.", "On Saturday at 10:00 a.m."], 3, "Please come to my house at 10:00 a.m. on Saturday. とある。"],
+    ["What should Meg and Kate bring?", ["Flour", "Milk", "Strawberries", "Eggs"], 2, "Could you bring some strawberries? とある。eggs と milk は Lucy が買う。"]
+  ]
+},
+{
+  passage:"【Eメール】\nFrom: Kenji\nTo: Amy\nSubject: See you at the airport\n\nDear Amy,\nI'm happy that you are coming to Japan. Your plane will arrive at Kansai Airport at 4:30 p.m. on August 3. My family and I will wait for you at the gate. I'll wear a yellow cap, so you can find me easily. We will take a train to our town. It takes about one hour.\n\nKenji",
+  qs:[
+    ["What time will Amy's plane arrive?", ["3:30 p.m.", "5:30 p.m.", "1:00 p.m.", "4:30 p.m."], 3, "arrive at Kansai Airport at 4:30 p.m. とある。"],
+    ["Why will Kenji wear a yellow cap?", ["So Amy can find him easily", "Because he is on the baseball team", "Because it will be sunny", "Because it is his favorite"], 0, "I'll wear a yellow cap, so you can find me easily. とある。"],
+    ["How will Kenji and Amy go to Kenji's town?", ["By plane", "By car", "By bus", "By train"], 3, "We will take a train to our town. とある。"]
+  ]
+},
+{
+  passage:"【Eメール】\nFrom: Mr. Hill\nTo: Basketball team members\nSubject: Practice on Wednesday\n\nHello, team.\nWe can't use the gym this Wednesday because workers will fix the floor. So we will practice on the school ground. We will run and do some exercises there. Please wear running shoes, not basketball shoes. We will start at the same time, 4:00 p.m. See you then!\n\nMr. Hill",
+  qs:[
+    ["Why can't the team use the gym on Wednesday?", ["Workers will fix the floor.", "There will be a school festival.", "The gym will be too hot.", "Another team will use it."], 0, "because workers will fix the floor とある。"],
+    ["What will the team do on the school ground?", ["Play basketball games", "Clean the ground", "Run and do exercises", "Watch a video"], 2, "We will run and do some exercises there. とある。"],
+    ["What should the members wear?", ["Running shoes", "Basketball shoes", "Swimming caps", "School uniforms"], 0, "Please wear running shoes, not basketball shoes. とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nMika is ten years old. Last summer, she wanted to ride a bike, but she couldn't. Her friends could ride bikes, so she felt sad. Her father said, \"Let's practice together every morning.\" They went to the park at six o'clock every day. Mika fell down many times, but she didn't give up. After two weeks, she could ride a bike. Now she rides it to school with her friends.",
+  qs:[
+    ["Why did Mika feel sad last summer?", ["She lost her bike.", "She had a fight with her father.", "She had to stay home.", "Her friends could ride bikes, but she couldn't."], 3, "Her friends could ride bikes, so she felt sad. とある。"],
+    ["How long did Mika practice before she could ride a bike?", ["About two months", "About two weeks", "About two years", "About two days"], 1, "After two weeks, she could ride a bike. とある。"],
+    ["How does Mika go to school now?", ["By car", "By bike", "On foot", "By bus"], 1, "Now she rides it to school with her friends. とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nDaiki likes eating curry, but he had never made it. Last Sunday, his mother was sick, so he decided to cook dinner for his family. He looked at a cookbook and cut carrots, potatoes, and onions. It took a long time. When his family ate the curry, his father said, \"It's very good!\" Daiki was really happy. He wants to make curry again next month.",
+  qs:[
+    ["Why did Daiki cook dinner last Sunday?", ["It was his mother's birthday.", "He wanted to win a contest.", "His mother was sick.", "His father was late."], 2, "his mother was sick, so he decided to cook dinner とある。"],
+    ["What did Daiki use to learn how to cook?", ["A cookbook", "A video", "A TV program", "His friend"], 0, "He looked at a cookbook とある。"],
+    ["How did Daiki feel when his father said it was good?", ["Happy", "Angry", "Tired", "Sad"], 0, "Daiki was really happy. とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nSara has a small dog named Coco. One day, Sara opened the door and Coco ran out. Sara looked for her around the house, but she couldn't find her. She felt very worried. Then she put up some pictures of Coco at the park and the station. Two days later, a woman called her. She said, \"I found your dog in the garden of my house.\" Sara was so glad. She said, \"Thank you very much,\" and hugged Coco.",
+  qs:[
+    ["What happened one day?", ["Sara lost her key.", "Coco got sick.", "Coco ran out of the house.", "Sara found a new dog."], 2, "Sara opened the door and Coco ran out. とある。"],
+    ["Where did Sara put up the pictures of Coco?", ["At the park and the station", "At school and the library", "At the zoo and the beach", "At the shop and the hospital"], 0, "pictures of Coco at the park and the station とある。"],
+    ["Where was Coco found?", ["In Sara's room", "At the station", "In a woman's garden", "At the park"], 2, "I found your dog in the garden of my house とある。"]
+  ]
+},
+{
+  passage:"【説明文】\nMany people in Japan enjoy cherry blossoms in spring. The flowers open in late March or early April in most parts of Japan. People have picnics under the trees with their family and friends. They eat lunch, talk, and enjoy the beautiful flowers. Some people go to see them at night, too. The flowers don't stay for a long time. They usually fall in about one week.",
+  qs:[
+    ["When do cherry blossoms open in most parts of Japan?", ["In summer", "In winter", "In May", "In late March or early April"], 3, "open in late March or early April とある。"],
+    ["What do people do under the cherry trees?", ["Have picnics with family and friends", "Take swimming lessons", "Sell flowers", "Play soccer games"], 0, "People have picnics under the trees とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nBen's school has a marathon every November. Ben is not a fast runner, so he didn't like it. This year, he decided to practice with his friend Leo. They ran for thirty minutes after school every day. On the day of the marathon, it was cold, but Ben ran well. He finished tenth, the best result for him. He told his mother, \"Running is fun now.\"",
+  qs:[
+    ["Why didn't Ben like the marathon before?", ["He didn't like Leo.", "He is not a fast runner.", "He had a bad knee.", "It is always too hot."], 1, "Ben is not a fast runner, so he didn't like it. とある。"],
+    ["What did Ben do this year?", ["He didn't practice at all.", "He joined the soccer team.", "He ran to school every morning.", "He practiced with Leo after school."], 3, "he decided to practice with his friend Leo とある。"],
+    ["How did Ben finish the marathon?", ["Last", "Tenth", "First", "Third"], 1, "He finished tenth とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nHaruka loves books. Every Wednesday after school, she helps in the school library. She puts the books back on the shelves and helps younger students find books. Last week, a first-grade boy asked, \"Do you have a book about dinosaurs?\" Haruka found three books for him. He said, \"Thank you!\" with a big smile. Haruka felt happy. She wants to be a librarian in the future.",
+  qs:[
+    ["When does Haruka help in the library?", ["Every morning", "Every weekend", "Every Wednesday after school", "On Mondays at lunch time"], 2, "Every Wednesday after school, she helps in the school library. とある。"],
+    ["What did the first-grade boy want?", ["A book about cars", "A new pen", "A map of the school", "A book about dinosaurs"], 3, "Do you have a book about dinosaurs? とたずねた。"],
+    ["What does Haruka want to be?", ["A doctor", "A librarian", "A writer", "A teacher"], 1, "She wants to be a librarian in the future. とある。"]
+  ]
+},
+{
+  passage:"【説明文】\nHoney bees work very hard. A bee flies to many flowers and collects a sweet juice from them. It carries the juice back to its home. There, the juice becomes honey. A bee must visit about two million flowers to make one kilogram of honey. That is a lot of work for such a small insect!",
+  qs:[
+    ["Where does a bee collect sweet juice?", ["From water", "From flowers", "From fruit", "From trees"], 1, "collects a sweet juice from them（flowers）とある。"],
+    ["What happens to the juice at the bee's home?", ["It becomes a flower.", "It becomes water.", "It is thrown away.", "It becomes honey."], 3, "There, the juice becomes honey. とある。"],
+    ["How many flowers must a bee visit to make one kilogram of honey?", ["About two million", "About twenty", "About two hundred", "About two thousand"], 0, "about two million flowers とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nLast Saturday, Tom visited his grandparents' farm with his family. They grow strawberries there. Tom picked many strawberries and ate some of them. They were sweet and fresh. His grandmother made strawberry jam with the rest. Tom took a bottle of it home. The next morning, he ate it on his bread. He said, \"I want to go to the farm again!\"",
+  qs:[
+    ["What do Tom's grandparents grow?", ["Strawberries", "Apples", "Tomatoes", "Rice"], 0, "They grow strawberries there. とある。"],
+    ["What did Tom's grandmother make?", ["Strawberry jam", "A strawberry cake", "Fruit juice", "Bread"], 0, "His grandmother made strawberry jam とある。"],
+    ["What did Tom do the next morning?", ["He picked more strawberries.", "He went to the farm again.", "He ate the jam on his bread.", "He made a cake."], 2, "The next morning, he ate it on his bread. とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nEmi and her friends planned a picnic in the park on Sunday. But it rained that morning, so they couldn't go. They were sad, but Emi had an idea. \"Let's have a picnic in my living room!\" she said. They put a blanket on the floor and ate sandwiches and fruit. They also played cards and watched a movie. In the evening, the rain stopped, and they saw a rainbow from the window. They said it was the best picnic ever.",
+  qs:[
+    ["Why couldn't Emi and her friends go to the park?", ["It rained.", "Emi was sick.", "They had to study.", "The park was closed."], 0, "it rained that morning, so they couldn't go とある。"],
+    ["Where did they have their picnic?", ["In the school gym", "In the park", "At a restaurant", "In Emi's living room"], 3, "Let's have a picnic in my living room! とある。"],
+    ["What did they see in the evening?", ["A rainbow", "A bird", "The stars", "Some fireworks"], 0, "they saw a rainbow from the window とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nYuki started writing an English diary last month. At first, she could only write one or two sentences. Her English teacher, Ms. Davis, checked her diary every week and wrote comments. Ms. Davis wrote, \"Good job!\" and showed her new words. Now Yuki can write about ten sentences every day. She says that her English is getting better, and she enjoys writing.",
+  qs:[
+    ["When did Yuki start writing an English diary?", ["Last month", "Last year", "Last week", "Two years ago"], 0, "started writing an English diary last month とある。"],
+    ["Who checks Yuki's diary?", ["Her friend", "Her mother", "Her father", "Ms. Davis"], 3, "Her English teacher, Ms. Davis, checked her diary とある。"],
+    ["How many sentences can Yuki write now?", ["One or two", "Only one", "About ten", "About fifty"], 2, "Now Yuki can write about ten sentences every day. とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nKoji has played the piano for five years. Last month, he had a concert at his school. He was very nervous before it started. His hands were cold. His teacher said, \"Take a deep breath and think of your favorite song.\" Koji did so, and he felt better. He played well, and everyone clapped. After the concert, his mother gave him some flowers. Koji said, \"I want to play at a bigger concert someday.\"",
+  qs:[
+    ["How long has Koji played the piano?", ["For two years", "For five years", "For ten years", "For one year"], 1, "has played the piano for five years とある。"],
+    ["What did Koji's teacher tell him?", ["To take a deep breath", "To play faster", "To practice more", "To close his eyes"], 0, "Take a deep breath and think of your favorite song. とある。"],
+    ["What did Koji's mother give him?", ["A new piano", "A card", "Some flowers", "A book"], 2, "his mother gave him some flowers とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nOur class has a small garden at school. In May, we planted tomato seeds. Every morning, we gave them water. Some students were worried because the plants were small. But in July, they became tall, and we found red tomatoes. We picked ten tomatoes and ate them at lunch. They were much sweeter than the ones from the supermarket. Next year, we want to grow carrots, too.",
+  qs:[
+    ["When did the class plant tomato seeds?", ["In September", "In July", "In May", "In April"], 2, "In May, we planted tomato seeds. とある。"],
+    ["What did the students do every morning?", ["They picked tomatoes.", "They cleaned the garden.", "They gave the plants water.", "They sold vegetables."], 2, "Every morning, we gave them water. とある。"],
+    ["What do the students want to grow next year?", ["Onions", "Strawberries", "Potatoes", "Carrots"], 3, "Next year, we want to grow carrots, too. とある。"]
+  ]
+},
+{
+  passage:"【説明文】\nSleep is very important for students. When you sleep, your body and brain rest. Doctors say that junior high school students need eight to ten hours of sleep every night. If you don't sleep enough, you may feel tired and can't think well at school. To sleep well, you should go to bed at the same time every day and not use your phone before bed.",
+  qs:[
+    ["How many hours of sleep do junior high school students need?", ["Eight to ten hours", "Five to six hours", "Six to seven hours", "Ten to twelve hours"], 0, "need eight to ten hours of sleep every night とある。"],
+    ["What is one way to sleep well?", ["Eat a lot before bed", "Sleep in a bright room", "Go to bed at the same time every day", "Use your phone before bed"], 2, "you should go to bed at the same time every day とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nAya couldn't swim. She was afraid of water. Last summer, she joined a swimming camp for three days. On the first day, she only put her face in the water. On the second day, a coach taught her how to kick. On the last day, she swam ten meters! Her coach said, \"You did it!\" Aya was so proud. She told her parents about it when she got home.",
+  qs:[
+    ["Why did Aya join the swimming camp?", ["She wanted to be a coach.", "Her friends joined it.", "Her parents were coaches.", "She couldn't swim."], 3, "Aya couldn't swim. She was afraid of water. が背景。"],
+    ["What did Aya do on the second day?", ["She learned how to kick.", "She swam ten meters.", "She swam fifty meters.", "She went home."], 0, "On the second day, a coach taught her how to kick. とある。"],
+    ["How far did Aya swim on the last day?", ["Two meters", "Ten meters", "Fifty meters", "One hundred meters"], 1, "On the last day, she swam ten meters! とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nLast winter, Kenta went to Hokkaido with his family. They visited the Snow Festival in Sapporo. There were many big snow statues. His favorite was a snow castle that was as tall as a house. It was very cold, so they drank hot milk at a small stand. In the evening, the statues were lit with colorful lights. Kenta took many pictures. He wants to go there again.",
+  qs:[
+    ["Where did Kenta go last winter?", ["Hokkaido", "Okinawa", "Nagano", "Tokyo"], 0, "Kenta went to Hokkaido with his family. とある。"],
+    ["What was Kenta's favorite statue?", ["A big robot", "A snow dog", "A snowman", "A snow castle"], 3, "His favorite was a snow castle とある。"],
+    ["What did they drink at a small stand?", ["Hot tea", "Coffee", "Cold juice", "Hot milk"], 3, "they drank hot milk at a small stand とある。"]
+  ]
+},
+{
+  passage:"【物語文】\nMr. Sato has a small bakery near the station. He gets up at three o'clock every morning to make bread. His shop opens at seven. Many people buy his bread on their way to work. His melon bread is the most popular. Every Friday, he gives free bread to children from the neighborhood. He says, \"I want children to have happy mornings.\"",
+  qs:[
+    ["What time does Mr. Sato get up?", ["At six o'clock", "At five o'clock", "At three o'clock", "At seven o'clock"], 2, "He gets up at three o'clock every morning とある。"],
+    ["What is the most popular bread at his shop?", ["Melon bread", "Curry bread", "Chocolate bread", "Cheese bread"], 0, "His melon bread is the most popular. とある。"],
+    ["What does Mr. Sato do on Fridays?", ["He makes bread for school.", "He gives free bread to children.", "He closes the shop.", "He sells bread at half price."], 1, "Every Friday, he gives free bread to children とある。"]
   ]
 }
 ];
 let rid=0;
-readingSets.forEach(set=>{
+readingSets.forEach((set,si)=>{
   set.qs.forEach(q=>{
-    Q.push({cat:"reading", id:"r"+(rid++), text:q[0], choices:q[1], answer:q[2], explain:q[3], passage:set.passage});
+    Q.push({cat:"reading", id:"n"+String(++rid).padStart(3,"0"), set:si, text:q[0], choices:q[1], answer:q[2], explain:q[3], passage:set.passage});
   });
+});
+
+/* ---- tango (英単語) : 英語→日本語、日本語→英語 ---- */
+const tangoData = [
+["「tea」の意味はどれ？", ["自然", "雪", "葉", "お茶"], 3, "tea ＝ お茶。例: I drink tea after dinner."],
+["「雨」を表す英語はどれ？", ["nature", "rain", "leaf", "fish"], 1, "rain ＝ 雨。例: We have a lot of rain in June."],
+["「sea」の意味はどれ？", ["海", "お茶", "自然", "心"], 0, "sea ＝ 海。例: We swam in the sea."],
+["「太陽」を表す英語はどれ？", ["fruit", "sun", "animal", "question"], 1, "sun ＝ 太陽。例: The sun is very hot today."],
+["「mountain」の意味はどれ？", ["塩", "山", "自然", "教科書"], 1, "mountain ＝ 山。例: We climbed the mountain last summer."],
+["「川」を表す英語はどれ？", ["weather", "rabbit", "river", "sun"], 2, "river ＝ 川。例: The river is clean."],
+["「lake」の意味はどれ？", ["湖", "祖母", "雪", "太陽"], 0, "lake ＝ 湖。例: There is a big lake near the town."],
+["「雪」を表す英語はどれ？", ["snow", "face", "market", "sun"], 0, "snow ＝ 雪。例: The children played in the snow."],
+["「wind」の意味はどれ？", ["風", "魚", "祖母", "健康"], 0, "wind ＝ 風。例: The wind is strong today."],
+["「雲」を表す英語はどれ？", ["cloud", "fruit", "father", "salt"], 0, "cloud ＝ 雲。例: I see a big cloud in the sky."],
+["「island」の意味はどれ？", ["魚", "川", "未来", "島"], 3, "island ＝ 島。例: They live on a small island."],
+["「葉」を表す英語はどれ？", ["leaf", "toy", "factory", "foot"], 0, "leaf ＝ 葉。例: A red leaf fell from the tree."],
+["「weather」の意味はどれ？", ["教科書", "動物", "山", "天気"], 3, "weather ＝ 天気。例: The weather is nice today."],
+["「工場」を表す英語はどれ？", ["grandmother", "factory", "wife", "wind"], 1, "factory ＝ 工場。例: My uncle works in a car factory."],
+["「market」の意味はどれ？", ["市場", "島", "動物", "農家の人"], 0, "market ＝ 市場。例: We bought fish at the market."],
+["「動物園」を表す英語はどれ？", ["zoo", "sugar", "lake", "arm"], 0, "zoo ＝ 動物園。例: We saw pandas at the zoo."],
+["「vacation」の意味はどれ？", ["肉", "休暇", "海", "おもちゃ"], 1, "vacation ＝ 休暇。例: I'm going to Hokkaido on my summer vacation."],
+["「おもちゃ」を表す英語はどれ？", ["weather", "father", "fruit", "toy"], 3, "toy ＝ おもちゃ。例: The baby has a new toy."],
+["「textbook」の意味はどれ？", ["成功", "島", "教科書", "塩"], 2, "textbook ＝ 教科書。例: Open your textbook to page ten."],
+["「砂糖」を表す英語はどれ？", ["future", "health", "success", "sugar"], 3, "sugar ＝ 砂糖。例: I don't like sugar in my tea."],
+["「salt」の意味はどれ？", ["雲", "ウサギ", "魚", "塩"], 3, "salt ＝ 塩。例: Please pass me the salt."],
+["「肉」を表す英語はどれ？", ["animal", "face", "rabbit", "meat"], 3, "meat ＝ 肉。例: My brother likes meat."],
+["「vegetable」の意味はどれ？", ["休暇", "歯", "野菜", "塩"], 2, "vegetable ＝ 野菜。例: Carrots are my favorite vegetable."],
+["「果物」を表す英語はどれ？", ["sun", "fruit", "market", "question"], 1, "fruit ＝ 果物。例: I eat fruit every morning."],
+["「future」の意味はどれ？", ["祖母", "歯", "未来", "ウサギ"], 2, "future ＝ 未来。例: I want to be a doctor in the future."],
+["「質問」を表す英語はどれ？", ["leaf", "question", "animal", "vegetable"], 1, "question ＝ 質問。例: Can I ask you a question?"],
+["「word」の意味はどれ？", ["山", "肩", "未来", "言葉（単語）"], 3, "word ＝ 言葉（単語）。例: I don't know this word."],
+["「健康」を表す英語はどれ？", ["health", "future", "farmer", "rain"], 0, "health ＝ 健康。例: Sleep is good for your health."],
+["「success」の意味はどれ？", ["山", "妻", "成功", "葉"], 2, "success ＝ 成功。例: Hard work leads to success."],
+["「自然」を表す英語はどれ？", ["grandmother", "rain", "nature", "zoo"], 2, "nature ＝ 自然。例: I love nature."],
+["「foot」の意味はどれ？", ["ウサギ", "心", "川", "足"], 3, "foot ＝ 足。例: I hurt my foot."],
+["「顔」を表す英語はどれ？", ["vegetable", "vacation", "wind", "face"], 3, "face ＝ 顔。例: Wash your face."],
+["「tooth」の意味はどれ？", ["魚", "歯", "工場", "休暇"], 1, "tooth ＝ 歯。例: I have a bad tooth."],
+["「肩」を表す英語はどれ？", ["textbook", "shoulder", "sun", "success"], 1, "shoulder ＝ 肩。例: My shoulder hurts."],
+["「heart」の意味はどれ？", ["湖", "心", "肩", "動物園"], 1, "heart ＝ 心。例: She has a kind heart."],
+["「腕」を表す英語はどれ？", ["word", "foot", "market", "arm"], 3, "arm ＝ 腕。例: He broke his arm."],
+["「father」の意味はどれ？", ["農家の人", "島", "動物", "父親"], 3, "father ＝ 父親。例: My father is a teacher."],
+["「妻」を表す英語はどれ？", ["fish", "wife", "shoulder", "tooth"], 1, "wife ＝ 妻。例: His wife is a nurse."],
+["「grandmother」の意味はどれ？", ["塩", "砂糖", "祖母", "海"], 2, "grandmother ＝ 祖母。例: My grandmother lives in Osaka."],
+["「農家の人」を表す英語はどれ？", ["animal", "zoo", "nature", "farmer"], 3, "farmer ＝ 農家の人。例: The farmer grows rice."],
+["「people」の意味はどれ？", ["歯", "人々", "動物", "工場"], 1, "people ＝ 人々。例: Many people were at the park."],
+["「動物」を表す英語はどれ？", ["sea", "market", "animal", "toy"], 2, "animal ＝ 動物。例: A lion is a big animal."],
+["「fish」の意味はどれ？", ["魚", "工場", "人々", "太陽"], 0, "fish ＝ 魚。例: We had fish for dinner."],
+["「ウサギ」を表す英語はどれ？", ["island", "animal", "rabbit", "factory"], 2, "rabbit ＝ ウサギ。例: The rabbit eats carrots."],
+["「say」の意味はどれ？", ["言う", "教える", "心配する", "覚えている"], 0, "say ＝ 言う。例: What did you say?"],
+["「話す」を表す英語はどれ？", ["throw", "pay", "talk", "rest"], 2, "talk ＝ 話す。例: Let's talk about the trip."],
+["「think」の意味はどれ？", ["考える", "入る", "話す", "笑う"], 0, "think ＝ 考える。例: I think so, too."],
+["「休む」を表す英語はどれ？", ["build", "rest", "show", "finish"], 1, "rest ＝ 休む。例: Let's rest for ten minutes."],
+["「sit」の意味はどれ？", ["入る", "座る", "言う", "（絵を）かく"], 1, "sit ＝ 座る。例: Please sit here."],
+["「さけぶ」を表す英語はどれ？", ["show", "finish", "understand", "shout"], 3, "shout ＝ さけぶ。例: Don't shout in the library."],
+["「teach」の意味はどれ？", ["教える", "支払う", "さけぶ", "座る"], 0, "teach ＝ 教える。例: Mr. Kato teaches math."],
+["「見せる」を表す英語はどれ？", ["think", "decide", "show", "invite"], 2, "show ＝ 見せる。例: Can you show me your photo?"],
+["「decide」の意味はどれ？", ["笑う", "心配する", "決める", "休む"], 2, "decide ＝ 決める。例: I decided to join the club."],
+["「覚えている」を表す英語はどれ？", ["finish", "rest", "spend", "remember"], 3, "remember ＝ 覚えている。例: I remember her name."],
+["「understand」の意味はどれ？", ["（時間・お金を）使う", "言う", "理解する", "座る"], 2, "understand ＝ 理解する。例: I don't understand this word."],
+["「（時間・お金を）使う」を表す英語はどれ？", ["spend", "laugh", "finish", "forget"], 0, "spend ＝ （時間・お金を）使う。例: I spent two hours on my homework."],
+["「wear」の意味はどれ？", ["着る", "教える", "決める", "覚えている"], 0, "wear ＝ 着る。例: She wears a red coat."],
+["「入る」を表す英語はどれ？", ["listen", "wear", "draw", "enter"], 3, "enter ＝ 入る。例: Please enter the room quietly."],
+["「invite」の意味はどれ？", ["投げる", "言う", "招待する", "笑う"], 2, "invite ＝ 招待する。例: I'll invite my friends to my party."],
+["「投げる」を表す英語はどれ？", ["draw", "shout", "finish", "throw"], 3, "throw ＝ 投げる。例: Throw the ball to me."],
+["「forget」の意味はどれ？", ["忘れる", "入る", "（絵を）かく", "教える"], 0, "forget ＝ 忘れる。例: Don't forget your key."],
+["「心配する」を表す英語はどれ？", ["decide", "wear", "worry", "think"], 2, "worry ＝ 心配する。例: Don't worry. It will be OK."],
+["「draw」の意味はどれ？", ["休む", "（時間・お金を）使う", "座る", "（絵を）かく"], 3, "draw ＝ （絵を）かく。例: She draws pictures every day."],
+["「建てる」を表す英語はどれ？", ["shout", "sit", "build", "worry"], 2, "build ＝ 建てる。例: They will build a new school."],
+["「pay」の意味はどれ？", ["支払う", "入る", "考える", "休む"], 0, "pay ＝ 支払う。例: I paid 500 yen for lunch. pay の過去形は paid。"],
+["「笑う」を表す英語はどれ？", ["laugh", "shout", "teach", "listen"], 0, "laugh ＝ 笑う。例: He likes to make people laugh."],
+["「listen」の意味はどれ？", ["終える", "笑う", "休む", "聞く（耳をかたむける）"], 3, "listen ＝ 聞く（耳をかたむける）。例: Listen to your teacher."],
+["「終える」を表す英語はどれ？", ["shout", "draw", "finish", "forget"], 2, "finish ＝ 終える。例: I finished my homework at nine."],
+["「other」の意味はどれ？", ["甘い", "ほかの", "おもしろい", "静かな"], 1, "other ＝ ほかの。例: Do you have any other questions?"],
+["「それぞれの」を表す英語はどれ？", ["different", "exciting", "such", "each"], 3, "each ＝ それぞれの。例: Each student has a desk."],
+["「own」の意味はどれ？", ["ほかの", "自分自身の", "静かな", "まずしい"], 1, "own ＝ 自分自身の。例: I have my own room."],
+["「十分な」を表す英語はどれ？", ["sweet", "enough", "other", "quiet"], 1, "enough ＝ 十分な。例: We have enough time."],
+["「exciting」の意味はどれ？", ["弱い", "わくわくする", "いつもの", "ちがう"], 1, "exciting ＝ わくわくする。例: The game was very exciting."],
+["「おもしろい」を表す英語はどれ？", ["quiet", "loud", "interesting", "honest"], 2, "interesting ＝ おもしろい。例: This book is interesting."],
+["「popular」の意味はどれ？", ["人気のある", "同じ", "甘い", "疲れた"], 0, "popular ＝ 人気のある。例: Soccer is popular in Brazil."],
+["「いつもの」を表す英語はどれ？", ["weak", "usual", "tired", "exciting"], 1, "usual ＝ いつもの。例: I got up at the usual time."],
+["「different」の意味はどれ？", ["わくわくする", "十分な", "甘い", "ちがう"], 3, "different ＝ ちがう。例: My bag is different from yours."],
+["「同じ」を表す英語はどれ？", ["same", "different", "tired", "sweet"], 0, "same ＝ 同じ。例: We are in the same class."],
+["「tired」の意味はどれ？", ["正直な", "わくわくする", "疲れた", "（音が）大きい"], 2, "tired ＝ 疲れた。例: I'm tired after the long walk."],
+["「役に立つ」を表す英語はどれ？", ["own", "interesting", "useful", "honest"], 2, "useful ＝ 役に立つ。例: This dictionary is very useful."],
+["「loud」の意味はどれ？", ["静かな", "（音が）大きい", "疲れた", "ちがう"], 1, "loud ＝ （音が）大きい。例: The music is too loud."],
+["「静かな」を表す英語はどれ？", ["sweet", "quiet", "weak", "different"], 1, "quiet ＝ 静かな。例: Please be quiet in the library."],
+["「sweet」の意味はどれ？", ["十分な", "甘い", "ちがう", "いつもの"], 1, "sweet ＝ 甘い。例: These cookies are sweet."],
+["「正直な」を表す英語はどれ？", ["honest", "each", "usual", "interesting"], 0, "honest ＝ 正直な。例: He is an honest boy."],
+["「weak」の意味はどれ？", ["いつもの", "正直な", "弱い", "同じ"], 2, "weak ＝ 弱い。例: The old dog is weak now."],
+["「まずしい」を表す英語はどれ？", ["sweet", "honest", "poor", "interesting"], 2, "poor ＝ まずしい。例: The family was poor, but happy."],
+["「such」の意味はどれ？", ["そのような", "静かな", "弱い", "役に立つ"], 0, "such ＝ そのような。例: I have never seen such a big fish."],
+["「went」の意味はどれ？", ["話した", "取った", "作った", "行った"], 3, "went ＝ 行った。例: We went to the zoo yesterday. go の過去形。"],
+["「買った」を表す英語はどれ？", ["spoke", "tried", "bought", "went"], 2, "bought ＝ 買った。例: I bought a pen yesterday. buy の過去形。"],
+["「took」の意味はどれ？", ["ためした", "立った", "話した", "取った"], 3, "took ＝ 取った。例: She took a picture of the lake. take の過去形。"],
+["「作った」を表す英語はどれ？", ["made", "tried", "stood", "took"], 0, "made ＝ 作った。例: My mother made a cake. make の過去形。"],
+["「spoke」の意味はどれ？", ["行った", "取った", "売った", "話した"], 3, "spoke ＝ 話した。例: He spoke to me in English. speak の過去形。"],
+["「売った」を表す英語はどれ？", ["stood", "sold", "spoke", "took"], 1, "sold ＝ 売った。例: They sold old books at the shop. sell の過去形。"],
+["「stood」の意味はどれ？", ["立った", "行った", "買った", "売った"], 0, "stood ＝ 立った。例: I stood in front of the door. stand の過去形。"],
+["「ためした」を表す英語はどれ？", ["went", "took", "tried", "spoke"], 2, "tried ＝ ためした。例: I tried a new kind of tea. try の過去形。"],
+["「hundred」の意味はどれ？", ["千", "百", "彼女のもの", "たくさんの"], 1, "hundred ＝ 百。例: There are one hundred students here."],
+["「千」を表す英語はどれ？", ["hers", "yours", "hundred", "thousand"], 3, "thousand ＝ 千。例: This book is two thousand yen."],
+["「hers」の意味はどれ？", ["百", "あなたのもの", "彼女のもの", "たくさんの"], 2, "hers ＝ 彼女のもの。例: This bag is hers."],
+["「あなたのもの」を表す英語はどれ？", ["thousand", "yours", "a lot of", "hers"], 1, "yours ＝ あなたのもの。例: Is this pen yours?"],
+["「a lot of」の意味はどれ？", ["たくさんの", "百", "あなたのもの", "彼女のもの"], 0, "a lot of ＝ たくさんの。例: I have a lot of books."]
+];
+tangoData.forEach((d,i)=>{
+  Q.push({cat:"tango", id:"n"+String(i+1).padStart(3,"0"), text:d[0], choices:d[1], answer:d[2], explain:d[3]});
 });
 
 /* ================= 生徒名の登録 ================= */
@@ -448,7 +1053,7 @@ function recordAnswer(q, isCorrect){
   saveStats(STATS);
 }
 
-function recordSession(label, correct, total){
+function recordSession(label, correct, total, answers){
   STATS.sessions.push({date:new Date().toISOString(), label, correct, total});
   if(STATS.sessions.length>50) STATS.sessions = STATS.sessions.slice(-50);
   saveStats(STATS);
@@ -458,7 +1063,8 @@ function recordSession(label, correct, total){
     correct: correct,
     total: total,
     pct: total ? Math.round(correct/total*100) : 0,
-    date: new Date().toISOString()
+    date: new Date().toISOString(),
+    answers: answers || []
   });
 }
 
@@ -477,23 +1083,44 @@ function buildMenu(){
   const list = document.getElementById("cat-list");
   list.innerHTML = "";
   CATS.forEach(c=>{
-    const n = Q.filter(q=>q.cat===c.id).length;
     const btn = document.createElement("button");
     btn.className = "cat-btn";
-    btn.innerHTML = `<span>${c.emoji} <b>${c.name}</b><br><span class="tag">${c.desc}</span></span><span class="count">${n}問</span>`;
+    btn.innerHTML = `<span>${c.emoji} <b>${c.name}</b><br><span class="tag">${c.desc}</span></span><span class="count">${QUIZ_SIZE}問</span>`;
     btn.onclick = ()=>startQuiz(c.id, c.name);
     list.appendChild(btn);
   });
-  document.getElementById("all-count").textContent = Q.length;
+  document.getElementById("all-count").textContent = QUIZ_SIZE * CATS.length;
   document.getElementById("btn-all").onclick = ()=>startQuiz("all","ランダム総合問題");
 }
 
+/* 読解は、同じ文章の設問をまとめて出す（途中で別の文章に飛ばない） */
+function pickReading(pool, n){
+  const bySet = {};
+  pool.forEach(q=>{ (bySet[q.set] = bySet[q.set] || []).push(q); });
+  const out = [], rest = [];
+  shuffle(Object.keys(bySet)).forEach(id=>{
+    const g = bySet[id];
+    if(out.length + g.length <= n) g.forEach(q=>out.push(q)); else rest.push(g);
+  });
+  rest.forEach(g=>{ if(out.length < n) g.slice(0, n-out.length).forEach(q=>out.push(q)); });
+  return out.slice(0, n);
+}
+/* 1つの項目から、ランダムに QUIZ_SIZE 問を選ぶ */
+function pickCat(catId){
+  const pool = Q.filter(q=>q.cat===catId);
+  return catId==="reading" ? pickReading(pool, QUIZ_SIZE) : shuffle(pool).slice(0, QUIZ_SIZE);
+}
+
 function startQuiz(catId, label, customQueue){
-  let pool = customQueue || (catId==="all" ? Q : Q.filter(q=>q.cat===catId));
-  state.queue = shuffle(pool);
+  let queue;
+  if(customQueue)         queue = shuffle(customQueue);                       // 復習：間違えた問題だけ
+  else if(catId==="all")  queue = shuffle([].concat(...CATS.map(c=>pickCat(c.id))));  // 総合：各項目10問ずつ
+  else                    queue = pickCat(catId);                             // 項目別：10問
+  state.queue = queue;
   state.pos = 0;
   state.correctCount = 0;
   state.missed = [];
+  state.answers = [];   // 管理画面用：1問ずつの記録
   state.currentCatLabel = label;
   showScreen("quiz");
   renderQuestion();
@@ -558,6 +1185,14 @@ function selectAnswer(idx){
     state.missed.push(q);
   }
   recordAnswer(q, isCorrect);
+  state.answers.push({   // 管理画面用：1問ずつの記録
+    qid: q.cat+":"+q.id,
+    cat: q.cat,
+    text: q.text.replace(/\n/g,' ').slice(0,80),
+    ok: isCorrect,
+    pick: String(q.choices[idx]).slice(0,40),
+    right: String(q.choices[correctIdx]).slice(0,40)
+  });
 
   const box = document.getElementById("explain-box");
   box.classList.add("show", idx===correctIdx ? "ok":"ng");
@@ -585,7 +1220,7 @@ function finishQuiz(){
   showScreen("result");
   const total = state.queue.length;
   const correct = state.correctCount;
-  recordSession(state.currentCatLabel, correct, total);
+  recordSession(state.currentCatLabel, correct, total, state.answers);
   const pct = total? Math.round(correct/total*100):0;
   document.getElementById("score-circle").style.setProperty("--pct", pct+"%");
   document.getElementById("score-big").textContent = correct+"/"+total;
